@@ -19,7 +19,9 @@ def extract_video_info(url: str):
         info = ydl.extract_info(url, download=False)
         return info
 
-@router.message(F.text == '/start')
+from aiogram.filters import CommandStart
+
+@router.message(CommandStart())
 async def cmd_start(message: Message, db):
     await db.add_user(
         message.from_user.id,
