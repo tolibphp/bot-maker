@@ -154,9 +154,17 @@ def create_admin_router(stars_db: StarsDB, admin_id: int) -> Router:
         if message.from_user.id != admin_id:
             return
         users_count = await stars_db.get_users_count()
+        
+        # Count verified
+        async with aiosqlite.connect(stars_db.db_path) as db:
+            cursor = await db.execute("SELECT COUNT(*) FROM users WHERE is_verified = 1")
+            row = await cursor.fetchone()
+            verified_count = row[0] if row else 0
+
         await message.answer(
             f"📈 <b>Statistika</b>\n\n"
-            f"👥 Umumiy foydalanuvchilar: <b>{users_count}</b> ta",
+            f"👥 Umumiy foydalanuvchilar: <b>{users_count}</b> ta\n"
+            f"✅ Tasdiqlanganlar (Kaptcha): <b>{verified_count}</b> ta",
             parse_mode="HTML"
         )
 

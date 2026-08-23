@@ -1,26 +1,35 @@
+import random
+import time
 from aiogram import Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from templates.stars_bot.database import StarsDB
-from templates.stars_bot.keyboards import main_menu_kb, admin_main_kb
+from templates.stars_bot.keyboards import main_menu_kb, admin_main_kb, captcha_kb
 from templates.stars_bot.handlers.subscription import check_subscription, send_subscription_message
 from templates.stars_bot.states import UserStates
+
+THROTTLING = {}
+
+def is_throttled(user_id: int) -> bool:
+    now = time.time()
+    if user_id in THROTTLING:
+        if now - THROTTLING[user_id] < 1.0: # 1 second limit
+            return True
+    THROTTLING[user_id] = now
+    return False
 
 def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
     router = Router()
 
     @router.message(CommandStart())
     async def cmd_start(message: Message, state: FSMContext):
+        if is_throttled(message.from_user.id): return
+        
         await state.clear()
         user_id = message.from_user.id
         text = message.text or ""
-
-        # Check sub
-        if not await check_subscription(message.bot, user_id, stars_db):
-            await send_subscription_message(message, stars_db)
-            return
 
         # Referral logic
         referrer_id = None
@@ -39,21 +48,27 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
             username=message.from_user.username, 
             referred_by=referrer_id
         )
+
+        user = await stars_db.get_user(user_id)
         
-        if is_new and referrer_id:
-            # Reward referrer
-            ref_bonus = int(await stars_db.get_setting("ref_bonus"))
-            await stars_db.update_balance(referrer_id, ref_bonus)
-            try:
-                await message.bot.send_message(
-                    referrer_id,
-                    f"🎉 <b>Yangi referal!</b>\n\n"
-                    f"👤 {message.from_user.full_name} sizning havolangiz orqali qo'shildi.\n"
-                    f"💰 <b>+{ref_bonus} ⭐️</b> balansga qo'shildi!",
-                    parse_mode="HTML"
-                )
-            except Exception:
-                pass
+        # Check if user is verified (Anti-Bot)
+        if not user or not user["is_verified"]:
+            num1 = random.randint(1, 10)
+            num2 = random.randint(1, 10)
+            correct_ans = num1 + num2
+            await message.answer(
+                f"🤖 <b>Anti-Bot tekshiruvi!</b>\n\n"
+                f"Siz robot emasmisiz? Misolni yeching:\n\n"
+                f"<b>{num1} + {num2} = ?</b>",
+                reply_markup=captcha_kb(correct_ans),
+                parse_mode="HTML"
+            )
+            return
+
+        # Check sub
+        if not await check_subscription(message.bot, user_id, stars_db):
+            await send_subscription_message(message, stars_db)
+            return
 
         await message.answer(
             f"👋 Assalomu alaykum, <b>{message.from_user.full_name}</b>!\n\n"
@@ -63,8 +78,50 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
             parse_mode="HTML"
         )
 
+    @router.callback_query(F.data.startswith("captcha:"))
+    async def process_captcha(callback: CallbackQuery):
+        res = callback.data.split(":")[1]
+        user_id = callback.from_user.id
+        
+        if res == "pass":
+            await callback.message.delete()
+            await stars_db.verify_user(user_id)
+            
+            # Reward referrer if exists
+            user = await stars_db.get_user(user_id)
+            referrer_id = user["referred_by"] if user else None
+            
+            if referrer_id:
+                ref_bonus = int(await stars_db.get_setting("ref_bonus"))
+                await stars_db.update_balance(referrer_id, ref_bonus)
+                try:
+                    await callback.bot.send_message(
+                        referrer_id,
+                        f"🎉 <b>Yangi referal!</b>\n\n"
+                        f"👤 {callback.from_user.full_name} sizning havolangiz orqali qo'shildi va tasdiqdan o'tdi.\n"
+                        f"💰 <b>+{ref_bonus} ⭐️</b> balansga qo'shildi!",
+                        parse_mode="HTML"
+                    )
+                except Exception:
+                    pass
+
+            if not await check_subscription(callback.bot, user_id, stars_db):
+                await send_subscription_message(callback.message, stars_db)
+                return
+
+            await callback.message.answer(
+                f"✅ <b>Tasdiqlandi!</b>\n\n"
+                f"Botdan to'liq foydalanishingiz mumkin.",
+                reply_markup=main_menu_kb(),
+                parse_mode="HTML"
+            )
+        else:
+            await callback.answer("❌ Noto'g'ri javob!", show_alert=True)
+
     @router.callback_query(F.data == "check_sub")
     async def check_sub_callback(callback: CallbackQuery):
+        if is_throttled(callback.from_user.id): return
+        
         if not await check_subscription(callback.bot, callback.from_user.id, stars_db):
             await callback.answer("Hali hamma kanallarga obuna bo'lmapsiz!", show_alert=True)
             return
@@ -79,6 +136,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
 
     @router.message(F.text == "💰 Balansim")
     async def show_balance(message: Message):
+        if is_throttled(message.from_user.id): return
         if not await check_subscription(message.bot, message.from_user.id, stars_db):
             await send_subscription_message(message, stars_db)
             return
@@ -95,6 +153,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
 
     @router.message(F.text == "⭐️ Stars ishlash")
     async def earn_stars(message: Message):
+        if is_throttled(message.from_user.id): return
         if not await check_subscription(message.bot, message.from_user.id, stars_db):
             await send_subscription_message(message, stars_db)
             return
@@ -137,6 +196,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
 
     @router.message(F.text == "💸 Stars yechish")
     async def withdraw_stars(message: Message, state: FSMContext):
+        if is_throttled(message.from_user.id): return
         if not await check_subscription(message.bot, message.from_user.id, stars_db):
             await send_subscription_message(message, stars_db)
             return
@@ -166,6 +226,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
 
     @router.message(UserStates.waiting_withdraw_details)
     async def withdraw_details(message: Message, state: FSMContext):
+        if is_throttled(message.from_user.id): return
         details = message.text
         data = await state.get_data()
         amount = data['withdraw_amount']
@@ -206,6 +267,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
 
     @router.message(F.text == "📊 To'lovlar")
     async def show_payouts(message: Message):
+        if is_throttled(message.from_user.id): return
         payout_channel = await stars_db.get_setting("payout_channel_username")
         if payout_channel:
             await message.answer(
@@ -217,6 +279,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
 
     @router.message(F.text == "ℹ️ FAQ")
     async def show_faq(message: Message):
+        if is_throttled(message.from_user.id): return
         ref_bonus = await stars_db.get_setting("ref_bonus")
         min_withdraw = await stars_db.get_setting("min_withdraw")
         

@@ -66,3 +66,22 @@ def post_bot_link_kb(bot_username: str):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🤖 Botga o'tish", url=f"https://t.me/{bot_username}")]
     ])
+
+def captcha_kb(correct_answer: int):
+    import random
+    answers = [correct_answer, correct_answer + random.randint(1, 5), correct_answer - random.randint(1, 5), correct_answer + random.randint(6, 10)]
+    random.shuffle(answers)
+    
+    buttons = []
+    row = []
+    for ans in answers:
+        if ans == correct_answer:
+            row.append(InlineKeyboardButton(text=str(ans), callback_data="captcha:pass"))
+        else:
+            row.append(InlineKeyboardButton(text=str(ans), callback_data="captcha:fail"))
+        
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+            
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

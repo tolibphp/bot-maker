@@ -17,8 +17,11 @@ class StarsDB:
                     balance INTEGER DEFAULT 0,
                     total_earned INTEGER DEFAULT 0,
                     referred_by INTEGER,
+                    is_verified INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+                
+                CREATE INDEX IF NOT EXISTS idx_referred_by ON users(referred_by);
 
                 CREATE TABLE IF NOT EXISTS channels (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,9 +35,14 @@ class StarsDB:
                 );
             """)
             
-            # Migration: add username column if it doesn't exist
+            # Migration: add username and is_verified columns if they don't exist
             try:
                 await db.execute("ALTER TABLE users ADD COLUMN username TEXT")
+            except Exception:
+                pass
+            try:
+                await db.execute("ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 0")
+                await db.execute("UPDATE users SET is_verified = 1") # Existing users should be verified
             except Exception:
                 pass
 
@@ -54,11 +62,16 @@ class StarsDB:
                 return False
             
             await db.execute(
-                "INSERT INTO users (telegram_id, username, referred_by) VALUES (?, ?, ?)",
+                "INSERT INTO users (telegram_id, username, referred_by, is_verified) VALUES (?, ?, ?, 0)",
                 (telegram_id, username, referred_by)
             )
             await db.commit()
             return True
+
+    async def verify_user(self, telegram_id: int):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("UPDATE users SET is_verified = 1 WHERE telegram_id = ?", (telegram_id,))
+            await db.commit()
 
     async def get_user_by_username(self, username: str):
         username = username.replace("@", "").lower()
@@ -90,7 +103,7 @@ class StarsDB:
 
     async def get_referral_count(self, telegram_id: int) -> int:
         async with aiosqlite.connect(self.db_path) as db:
-            cursor = await db.execute("SELECT COUNT(*) FROM users WHERE referred_by = ?", (telegram_id,))
+            cursor = await db.execute("SELECT COUNT(*) FROM users WHERE referred_by = ? AND is_verified = 1", (telegram_id,))
             row = await cursor.fetchone()
             return row[0] if row else 0
 
