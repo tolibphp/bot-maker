@@ -60,9 +60,11 @@ async def manage_bot(callback: CallbackQuery):
     else:
         trial_text = f"{MONEY} Kunlik to'lov: <b>{daily_price:,} so'm/kun</b>"
 
+    template_name = template_info.get('name', "Noma'lum")
+    
     text = (
         f"{BOT} <b>Botingiz:</b> {username}\n"
-        f"<blockquote>{WRENCH} Shablon: <b>{template_info.get('name', 'Noma\\'lum')}</b>\n"
+        f"<blockquote>{WRENCH} Shablon: <b>{template_name}</b>\n"
         f"Holati: {status_emoji} <b>{status}</b>\n"
         f"{trial_text}</blockquote>\n\n"
         f"Nimani o'zgartirmoqchisiz?"
