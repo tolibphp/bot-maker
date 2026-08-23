@@ -89,7 +89,13 @@ async def process_amount_balance(message: Message, state: FSMContext):
         data = await state.get_data()
         target_id = data['target_id']
         
-        from database.users import update_balance
+        from database.users import update_balance, get_user
+        user = await get_user(target_id)
+        if not user:
+            await message.answer(f"{CROSS} Foydalanuvchi topilmadi!", parse_mode="HTML")
+            await state.clear()
+            return
+            
         await update_balance(target_id, amount)
         
         await add_payment(
@@ -99,19 +105,23 @@ async def process_amount_balance(message: Message, state: FSMContext):
             description="Admin tomonidan balans o'zgartirildi"
         )
         
-        await message.answer(f"{CHECK} Muvaffaqiyatli! ID {target_id} ning balansi <b>{amount}</b> so'mga o'zgardi.", parse_mode="HTML")
+        await message.answer(f"{CHECK} Balans muvaffaqiyatli o'zgartirildi!", parse_mode="HTML")
+        await state.clear()
+        
+        # Notify user
         try:
-            action = "qo'shildi" if amount > 0 else "ayirildi"
             await message.bot.send_message(
                 target_id,
-                f"{MONEY} <b>Admin tomonidan balansingizga {abs(amount):,} so'm {action}!</b>",
+                f"{MONEY} <b>Admin tomonidan balans o'zgartirildi:</b>\n\n"
+                f"Miqdor: {'+' if amount > 0 else ''}{amount:,} so'm\n"
+                f"Hozirgi balans: {user['balance'] + amount:,} so'm",
                 parse_mode="HTML"
             )
-        except:
+        except Exception:
             pass
             
     except ValueError:
-        await message.answer(f"{CROSS} Summa noto'g'ri. Raqam yozing:")
+        await message.answer(f"{CROSS} Noto'g'ri summa. Raqam kiriting:")
     
     await state.clear()
 
