@@ -6,7 +6,7 @@ from templates.kino_bot.database import KinoDB
 from templates.kino_bot.keyboards import (
     admin_main_kb, categories_select_kb, categories_manage_kb,
     channels_manage_kb, cancel_admin_kb, movie_list_kb,
-    confirm_delete_kb
+    confirm_delete_kb, channel_post_kb
 )
 from templates.kino_bot.states import (
     AddMovieStates, AddCategoryStates, AddChannelStates,
@@ -95,11 +95,48 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         await message.answer(
             f"✅ <b>Kino qo'shildi!</b>\n\n"
             f"🎬 Nomi: <b>{data['movie_name']}</b>\n"
-            f"📁 Kategoriya: {data.get('category_name', '')}\n"
+            f"📂 Kategoriya: {data.get('category_name', '')}\n"
             f"📌 Kodi: <code>#{code}</code>",
             reply_markup=admin_main_kb(),
             parse_mode="HTML"
         )
+
+        # --- Auto-post to channels ---
+        channels = await kino_db.get_channels()
+        if channels:
+            bot_me = await message.bot.get_me()
+            post_caption = (
+                f"🎬 <b>{data['movie_name']}</b>\n\n"
+                f"📂 {data.get('category_name', '')}\n"
+                f"📌 Kod: <code>#{code}</code>\n\n"
+                f"▶️ Botda ko'rish uchun tugmani bosing 👇"
+            )
+            post_kb = channel_post_kb(bot_me.username)
+
+            for ch in channels:
+                try:
+                    if message.video:
+                        await message.bot.send_video(
+                            chat_id=ch["channel_id"],
+                            video=file_id,
+                            caption=post_caption,
+                            reply_markup=post_kb,
+                            parse_mode="HTML"
+                        )
+                    else:
+                        await message.bot.send_document(
+                            chat_id=ch["channel_id"],
+                            document=file_id,
+                            caption=post_caption,
+                            reply_markup=post_kb,
+                            parse_mode="HTML"
+                        )
+                except Exception as e:
+                    await message.answer(
+                        f"⚠️ Kanalga ({ch['channel_id']}) post qilib bo'lmadi: {e}",
+                        parse_mode="HTML"
+                    )
+
         await state.clear()
 
     @router.message(AddMovieStates.waiting_file)
