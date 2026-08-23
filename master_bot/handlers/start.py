@@ -4,7 +4,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from config import ADMIN_ID, ADMIN_USERNAME
-from database.users import add_user, get_user, update_balance
+from database.users import add_user_with_referral, get_user, update_balance
 from database.payments import add_payment
 from master_bot.keyboards import main_menu_kb
 from master_bot.emojis import BOT, MOVIE, STAR, CASH, GIFT, BACK, PHONE, CHECK, PERSON, MONEY
@@ -32,13 +32,14 @@ async def cmd_start(message: Message):
 
     user = await get_user(user_id)
     if not user:
-        await add_user(
+        is_new = await add_user_with_referral(
             telegram_id=user_id,
             username=message.from_user.username,
             full_name=message.from_user.full_name,
             referred_by=referrer_id
         )
-        if referrer_id:
+        
+        if is_new and referrer_id:
             ref_user = await get_user(referrer_id)
             if ref_user:
                 await update_balance(referrer_id, REFERRAL_JOIN_BONUS)
