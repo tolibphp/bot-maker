@@ -22,17 +22,29 @@ async def add_payment(
         await db.close()
 
 
-async def get_user_payments(user_telegram_id: int, limit: int = 20):
+async def get_user_payments(user_telegram_id: int, limit: int = 10, offset: int = 0):
     db = await get_db()
     try:
         cursor = await db.execute(
             """SELECT * FROM payments 
             WHERE user_telegram_id = ? 
-            ORDER BY created_at DESC LIMIT ?""",
-            (user_telegram_id, limit)
+            ORDER BY created_at DESC LIMIT ? OFFSET ?""",
+            (user_telegram_id, limit, offset)
         )
         rows = await cursor.fetchall()
         return [dict(r) for r in rows]
+    finally:
+        await db.close()
+
+async def get_user_payments_count(user_telegram_id: int):
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT COUNT(*) as count FROM payments WHERE user_telegram_id = ?",
+            (user_telegram_id,)
+        )
+        row = await cursor.fetchone()
+        return row["count"] if row else 0
     finally:
         await db.close()
 

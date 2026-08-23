@@ -1,11 +1,11 @@
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from config import ADMIN_ID, ADMIN_USERNAME, PAYMENT_CARD, PAYMENT_CARD_HOLDER
 from database.users import get_balance
-from database.payments import get_user_payments
-from master_bot.keyboards import main_menu_kb, payment_kb, payment_approve_kb
+from database.payments import get_user_payments, get_user_payments_count
+from master_bot.keyboards import main_menu_kb, payment_kb, payment_approve_kb, balance_kb, payment_history_kb
 from master_bot.states import PaymentStates
 
 router = Router()
@@ -14,20 +14,58 @@ router = Router()
 @router.message(F.text == "💰 Balansim")
 async def show_balance(message: Message):
     balance = await get_balance(message.from_user.id)
-    payments = await get_user_payments(message.from_user.id, limit=5)
 
     text = (
         f"💰 <b>Balansim</b>\n\n"
         f"💵 Joriy balans: <b>{balance:,} so'm</b>\n"
     )
 
-    if payments:
-        text += "\n📜 <b>Oxirgi operatsiyalar:</b>\n"
-        for p in payments:
-            emoji = "➕" if p["amount"] > 0 else "➖"
-            text += f"{emoji} {abs(p['amount']):,} so'm — {p['description'] or p['payment_type']}\n"
+    await message.answer(text, reply_markup=balance_kb(), parse_mode="HTML")
 
-    await message.answer(text, parse_mode="HTML")
+
+@router.callback_query(F.data == "back_to_balance")
+async def back_to_balance(callback: CallbackQuery):
+    balance = await get_balance(callback.from_user.id)
+
+    text = (
+        f"💰 <b>Balansim</b>\n\n"
+        f"💵 Joriy balans: <b>{balance:,} so'm</b>\n"
+    )
+
+    await callback.message.edit_text(text, reply_markup=balance_kb(), parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("payment_history:"))
+async def payment_history_page(callback: CallbackQuery):
+    page = int(callback.data.split(":")[1])
+    per_page = 10
+    user_id = callback.from_user.id
+
+    total = await get_user_payments_count(user_id)
+    if total == 0:
+        await callback.answer("Sizda hali to'lovlar tarixi yo'q.", show_alert=True)
+        return
+
+    total_pages = (total + per_page - 1) // per_page
+    if page >= total_pages:
+        page = total_pages - 1
+    if page < 0:
+        page = 0
+
+    offset = page * per_page
+    payments = await get_user_payments(user_id, limit=per_page, offset=offset)
+
+    text = f"📜 <b>To'lovlar tarixi</b> (Jami: {total})\n\n"
+    for p in payments:
+        emoji = "🟢" if p["amount"] > 0 else "🔴"
+        date_str = p["created_at"][:16]  # Limit to YYYY-MM-DD HH:MM
+        text += f"{emoji} <b>{abs(p['amount']):,} so'm</b>\n└ <i>{p['description'] or p['payment_type']}</i>\n└ 🕒 {date_str}\n\n"
+
+    await callback.message.edit_text(
+        text, 
+        reply_markup=payment_history_kb(page, total_pages), 
+        parse_mode="HTML"
+    )
 
 
 @router.message(F.text == "💳 Balans to'ldirish")

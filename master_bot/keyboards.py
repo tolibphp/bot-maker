@@ -95,3 +95,27 @@ def back_kb():
         keyboard=[[KeyboardButton(text="🔙 Orqaga")]],
         resize_keyboard=True
     )
+
+
+def balance_kb():
+    """Inline keyboard under the balance message."""
+    buttons = [
+        [InlineKeyboardButton(text="📜 To'lovlar tarixi", callback_data="payment_history:0")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def payment_history_kb(page: int, total_pages: int):
+    """Inline keyboard for navigating transaction history."""
+    buttons = []
+    nav = []
+    if page > 0:
+        nav.append(InlineKeyboardButton(text="⬅️", callback_data=f"payment_history:{page-1}"))
+    nav.append(InlineKeyboardButton(text=f"{page+1}/{total_pages}", callback_data="noop"))
+    if page < total_pages - 1:
+        nav.append(InlineKeyboardButton(text="➡️", callback_data=f"payment_history:{page+1}"))
+    if nav:
+        buttons.append(nav)
+    
+    buttons.append([InlineKeyboardButton(text="🔙 Balansga qaytish", callback_data="back_to_balance")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
