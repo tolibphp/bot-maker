@@ -48,6 +48,12 @@ class KinoDB:
                     channel_id TEXT UNIQUE NOT NULL,
                     channel_name TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS bot_channels (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    channel_id TEXT UNIQUE NOT NULL,
+                    channel_name TEXT
+                );
             """)
             await db.commit()
         finally:
@@ -303,6 +309,35 @@ class KinoDB:
         db = await self._get_db()
         try:
             await db.execute("DELETE FROM channels WHERE id = ?", (channel_id,))
+            await db.commit()
+        finally:
+            await db.close()
+
+    # ---- Bot Channels (display + auto-post) ----
+    async def add_bot_channel(self, channel_id: str, channel_name: str = None):
+        db = await self._get_db()
+        try:
+            await db.execute(
+                "INSERT OR IGNORE INTO bot_channels (channel_id, channel_name) VALUES (?, ?)",
+                (channel_id, channel_name)
+            )
+            await db.commit()
+        finally:
+            await db.close()
+
+    async def get_bot_channels(self):
+        db = await self._get_db()
+        try:
+            cursor = await db.execute("SELECT * FROM bot_channels")
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            await db.close()
+
+    async def delete_bot_channel(self, channel_id: int):
+        db = await self._get_db()
+        try:
+            await db.execute("DELETE FROM bot_channels WHERE id = ?", (channel_id,))
             await db.commit()
         finally:
             await db.close()

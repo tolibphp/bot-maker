@@ -1,17 +1,20 @@
+import logging
+
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from templates.kino_bot.database import KinoDB
 from templates.kino_bot.keyboards import (
-    admin_main_kb, categories_select_kb, categories_manage_kb,
-    channels_manage_kb, cancel_admin_kb, movie_list_kb,
-    confirm_delete_kb, channel_post_kb
+    admin_main_kb, channels_manage_kb, bot_channels_manage_kb,
+    cancel_admin_kb, movie_list_kb, confirm_delete_kb, channel_post_kb
 )
 from templates.kino_bot.states import (
-    AddMovieStates, AddCategoryStates, AddChannelStates,
+    AddMovieStates, AddChannelStates, AddBotChannelStates,
     BroadcastStates, BanUserStates
 )
+
+logger = logging.getLogger(__name__)
 
 
 def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
@@ -20,7 +23,10 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
     def is_admin(message: Message) -> bool:
         return message.from_user.id == admin_id
 
-    # --- Add Movie ---
+    # ==========================================
+    #  ➕ KINO QO'SHISH (Nom → Video → Tayyor!)
+    # ==========================================
+
     @router.message(F.text == "➕ Kino qo'shish")
     async def add_movie_start(message: Message, state: FSMContext):
         if not is_admin(message):
@@ -38,33 +44,8 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         if not is_admin(message):
             return
         await state.update_data(movie_name=message.text.strip())
-
-        categories = await kino_db.get_categories()
-        if not categories:
-            await message.answer(
-                "❌ Hali kategoriya qo'shilmagan!\n"
-                "Avval 📁 Kategoriya boshqarish dan kategoriya qo'shing.",
-                reply_markup=admin_main_kb(),
-                parse_mode="HTML"
-            )
-            await state.clear()
-            return
-
         await message.answer(
-            "📁 Kategoriyani tanlang:",
-            reply_markup=categories_select_kb(categories),
-            parse_mode="HTML"
-        )
-        await state.set_state(AddMovieStates.waiting_category)
-
-    @router.callback_query(F.data.startswith("selcat:"), AddMovieStates.waiting_category)
-    async def add_movie_category(callback: CallbackQuery, state: FSMContext):
-        cat_id = int(callback.data.split(":")[1])
-        category = await kino_db.get_category(cat_id)
-        await state.update_data(category_id=cat_id, category_name=category["name"] if category else "")
-
-        await callback.message.edit_text(
-            "📤 Endi kino faylini (video yoki dokument) yuboring:",
+            "📤 Kino faylini yuboring (video yoki dokument):",
             parse_mode="HTML"
         )
         await state.set_state(AddMovieStates.waiting_file)
@@ -87,7 +68,7 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
 
         code = await kino_db.add_movie(
             name=data["movie_name"],
-            category_id=data["category_id"],
+            category_id=None,
             file_id=file_id,
             caption=caption
         )
@@ -95,25 +76,23 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         await message.answer(
             f"✅ <b>Kino qo'shildi!</b>\n\n"
             f"🎬 Nomi: <b>{data['movie_name']}</b>\n"
-            f"📂 Kategoriya: {data.get('category_name', '')}\n"
             f"📌 Kodi: <code>#{code}</code>",
             reply_markup=admin_main_kb(),
             parse_mode="HTML"
         )
 
-        # --- Auto-post to channels ---
-        channels = await kino_db.get_channels()
-        if channels:
+        # --- Bot kanallariga avto-post ---
+        bot_channels = await kino_db.get_bot_channels()
+        if bot_channels:
             bot_me = await message.bot.get_me()
             post_caption = (
                 f"🎬 <b>{data['movie_name']}</b>\n\n"
-                f"📂 {data.get('category_name', '')}\n"
                 f"📌 Kod: <code>#{code}</code>\n\n"
                 f"▶️ Botda ko'rish uchun tugmani bosing 👇"
             )
             post_kb = channel_post_kb(bot_me.username)
 
-            for ch in channels:
+            for ch in bot_channels:
                 try:
                     if message.video:
                         await message.bot.send_video(
@@ -133,7 +112,7 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
                         )
                 except Exception as e:
                     await message.answer(
-                        f"⚠️ Kanalga ({ch['channel_id']}) post qilib bo'lmadi: {e}",
+                        f"⚠️ Kanalga post qilib bo'lmadi: {e}",
                         parse_mode="HTML"
                     )
 
@@ -143,7 +122,10 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
     async def add_movie_file_invalid(message: Message):
         await message.answer("❌ Iltimos, video yoki dokument faylini yuboring.")
 
-    # --- Movies List with Delete ---
+    # ==========================================
+    #  📋 KINOLAR RO'YXATI
+    # ==========================================
+
     @router.message(F.text == "📋 Kinolar ro'yxati")
     async def movies_list(message: Message):
         if not is_admin(message):
@@ -158,11 +140,9 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         total_pages = (total + per_page - 1) // per_page
         movies = await kino_db.get_all_movies(page=0, per_page=per_page)
 
-        text = f"📋 <b>Kinolar ro'yxati</b> ({total} ta)\n\n"
-        text += "O'chirish uchun 🗑 bosing:\n"
-
         await message.answer(
-            text,
+            f"📋 <b>Kinolar ro'yxati</b> ({total} ta)\n\n"
+            f"O'chirish uchun 🗑 bosing:",
             reply_markup=movie_list_kb(movies, 0, total_pages),
             parse_mode="HTML"
         )
@@ -175,16 +155,13 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         total_pages = (total + per_page - 1) // per_page
         movies = await kino_db.get_all_movies(page=page, per_page=per_page)
 
-        text = f"📋 <b>Kinolar ro'yxati</b> ({total} ta)\n\n"
-        text += "O'chirish uchun 🗑 bosing:\n"
-
         await callback.message.edit_text(
-            text,
+            f"📋 <b>Kinolar ro'yxati</b> ({total} ta)\n\n"
+            f"O'chirish uchun 🗑 bosing:",
             reply_markup=movie_list_kb(movies, page, total_pages),
             parse_mode="HTML"
         )
 
-    # --- Delete Movie (from inline button) ---
     @router.callback_query(F.data.startswith("delmovie:"))
     async def delete_movie_inline(callback: CallbackQuery):
         code = callback.data.split(":")[1]
@@ -192,7 +169,6 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         if not movie:
             await callback.answer("Kino topilmadi!", show_alert=True)
             return
-
         await callback.message.edit_text(
             f"🗑 <b>{movie['name']}</b> (#{movie['code']}) ni o'chirmoqchimisiz?",
             reply_markup=confirm_delete_kb(code),
@@ -206,7 +182,7 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         if movie:
             await kino_db.delete_movie(code)
             await callback.message.edit_text(
-                f"✅ <b>{movie['name']}</b> (#{movie['code']}) o'chirildi.",
+                f"✅ <b>{movie['name']}</b> (#{code}) o'chirildi.",
                 parse_mode="HTML"
             )
         else:
@@ -216,72 +192,28 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
     async def cancel_delete(callback: CallbackQuery):
         await callback.message.delete()
 
-    # --- Category Management ---
-    @router.message(F.text == "📁 Kategoriya boshqarish")
-    async def manage_categories(message: Message):
-        if not is_admin(message):
-            return
-        categories = await kino_db.get_categories()
+    # ==========================================
+    #  ✅ MAJBURIY OBUNA (faqat tekshirish uchun)
+    # ==========================================
 
-        text = "📁 <b>Kategoriyalar</b>\n\n"
-        if categories:
-            for c in categories:
-                text += f"• {c['name']}\n"
-            text += "\nO'chirish uchun bosing. Yangi qo'shish uchun tugmani bosing."
-        else:
-            text += "Hali kategoriya yo'q."
-
-        await message.answer(
-            text,
-            reply_markup=categories_manage_kb(categories),
-            parse_mode="HTML"
-        )
-
-    @router.callback_query(F.data == "add_category")
-    async def add_category_start(callback: CallbackQuery, state: FSMContext):
-        await callback.message.edit_text(
-            "📁 Yangi kategoriya nomini kiriting:",
-            parse_mode="HTML"
-        )
-        await state.set_state(AddCategoryStates.waiting_name)
-
-    @router.message(AddCategoryStates.waiting_name)
-    async def add_category_name(message: Message, state: FSMContext):
-        if not is_admin(message):
-            return
-        name = message.text.strip()
-        await kino_db.add_category(name)
-        await message.answer(
-            f"✅ Kategoriya <b>{name}</b> qo'shildi!",
-            reply_markup=admin_main_kb(),
-            parse_mode="HTML"
-        )
-        await state.clear()
-
-    @router.callback_query(F.data.startswith("delcat:"))
-    async def delete_category(callback: CallbackQuery):
-        cat_id = int(callback.data.split(":")[1])
-        category = await kino_db.get_category(cat_id)
-        await kino_db.delete_category(cat_id)
-        await callback.message.edit_text(
-            f"✅ Kategoriya <b>{category['name'] if category else ''}</b> o'chirildi.",
-            parse_mode="HTML"
-        )
-
-    # --- Channel Management ---
     @router.message(F.text == "✅ Majburiy obuna")
-    async def manage_channels(message: Message):
+    async def manage_sub_channels(message: Message):
         if not is_admin(message):
             return
         channels = await kino_db.get_channels()
 
-        text = "✅ <b>Majburiy obuna kanallari</b>\n\n"
+        text = (
+            "✅ <b>Majburiy obuna</b>\n\n"
+            "Bu kanallar foydalanuvchi botdan foydalanish uchun\n"
+            "<b>obuna bo'lishi shart</b> bo'lgan kanallar.\n\n"
+        )
         if channels:
+            text += "<b>Qo'shilgan kanallar:</b>\n"
             for ch in channels:
-                text += f"📢 {ch['channel_name'] or ch['channel_id']}\n"
-            text += "\nO'chirish uchun bosing."
+                text += f"✅ {ch['channel_name'] or ch['channel_id']}\n"
+            text += "\nO'chirish uchun bosing 👇"
         else:
-            text += "Hali kanal qo'shilmagan."
+            text += "⚠️ Majburiy obuna yo'q.\nUser tekshiruvsiz foydalanadi."
 
         await message.answer(
             text,
@@ -292,7 +224,8 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
     @router.callback_query(F.data == "add_channel")
     async def add_channel_start(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text(
-            "📢 Kanal username ni kiriting\n"
+            "✅ <b>Majburiy obuna kanal qo'shish</b>\n\n"
+            "Kanal username ni kiriting:\n"
             "Misol: <code>@mychannel</code>\n\n"
             "⚠️ Bot kanalda admin bo'lishi kerak!",
             parse_mode="HTML"
@@ -300,11 +233,10 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         await state.set_state(AddChannelStates.waiting_channel)
 
     @router.message(AddChannelStates.waiting_channel)
-    async def add_channel_name(message: Message, state: FSMContext):
+    async def add_channel_save(message: Message, state: FSMContext):
         if not is_admin(message):
             return
         channel_id = message.text.strip()
-
         try:
             chat = await message.bot.get_chat(channel_id)
             channel_name = chat.title
@@ -313,22 +245,109 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
 
         await kino_db.add_channel(channel_id, channel_name)
         await message.answer(
-            f"✅ Kanal <b>{channel_name}</b> qo'shildi!",
+            f"✅ <b>{channel_name}</b> majburiy obuna ga qo'shildi!",
             reply_markup=admin_main_kb(),
             parse_mode="HTML"
         )
         await state.clear()
 
     @router.callback_query(F.data.startswith("delch:"))
-    async def delete_channel(callback: CallbackQuery):
+    async def delete_sub_channel(callback: CallbackQuery):
         ch_id = int(callback.data.split(":")[1])
         await kino_db.delete_channel(ch_id)
+        channels = await kino_db.get_channels()
+        text = "✅ Kanal o'chirildi.\n\n"
+        if channels:
+            for ch in channels:
+                text += f"✅ {ch['channel_name'] or ch['channel_id']}\n"
+        else:
+            text += "⚠️ Majburiy obuna kanallar yo'q."
         await callback.message.edit_text(
-            "✅ Kanal o'chirildi.",
+            text, reply_markup=channels_manage_kb(channels), parse_mode="HTML"
+        )
+
+    # ==========================================
+    #  📢 BOT KANALI (Kanalimiz tugmasi + avto-post)
+    # ==========================================
+
+    @router.message(F.text == "📢 Bot kanali")
+    async def manage_bot_channels(message: Message):
+        if not is_admin(message):
+            return
+        channels = await kino_db.get_bot_channels()
+
+        text = (
+            "📢 <b>Bot kanali</b>\n\n"
+            "Bu kanal:\n"
+            "📢 «Kanalimiz» tugmasida ko'rsatiladi\n"
+            "📤 Yangi kino avtomatik post qilinadi\n\n"
+        )
+        if channels:
+            text += "<b>Qo'shilgan kanallar:</b>\n"
+            for ch in channels:
+                text += f"📢 {ch['channel_name'] or ch['channel_id']}\n"
+            text += "\nO'chirish uchun bosing 👇"
+        else:
+            text += "⚠️ Hali kanal qo'shilmagan."
+
+        await message.answer(
+            text,
+            reply_markup=bot_channels_manage_kb(channels),
             parse_mode="HTML"
         )
 
-    # --- Broadcast ---
+    @router.callback_query(F.data == "add_bot_channel")
+    async def add_bot_channel_start(callback: CallbackQuery, state: FSMContext):
+        await callback.message.edit_text(
+            "📢 <b>Bot kanali qo'shish</b>\n\n"
+            "Kanal username ni kiriting:\n"
+            "Misol: <code>@mychannel</code>\n\n"
+            "⚠️ Bot kanalda admin bo'lishi kerak!\n"
+            "(Avto-post uchun zarur)",
+            parse_mode="HTML"
+        )
+        await state.set_state(AddBotChannelStates.waiting_channel)
+
+    @router.message(AddBotChannelStates.waiting_channel)
+    async def add_bot_channel_save(message: Message, state: FSMContext):
+        if not is_admin(message):
+            return
+        channel_id = message.text.strip()
+        try:
+            chat = await message.bot.get_chat(channel_id)
+            channel_name = chat.title
+        except Exception:
+            channel_name = channel_id
+
+        await kino_db.add_bot_channel(channel_id, channel_name)
+        await message.answer(
+            f"📢 <b>{channel_name}</b> bot kanaliga qo'shildi!\n\n"
+            f"📢 «Kanalimiz» tugmasida ko'rsatiladi\n"
+            f"📤 Yangi kinolar avto-post qilinadi",
+            reply_markup=admin_main_kb(),
+            parse_mode="HTML"
+        )
+        await state.clear()
+
+    @router.callback_query(F.data.startswith("delbotch:"))
+    async def delete_bot_channel(callback: CallbackQuery):
+        ch_id = int(callback.data.split(":")[1])
+        await kino_db.delete_bot_channel(ch_id)
+        channels = await kino_db.get_bot_channels()
+        text = "✅ Kanal o'chirildi.\n\n"
+        if channels:
+            for ch in channels:
+                text += f"📢 {ch['channel_name'] or ch['channel_id']}\n"
+        else:
+            text += "⚠️ Bot kanallari yo'q."
+        await callback.message.edit_text(
+            text, reply_markup=bot_channels_manage_kb(channels), parse_mode="HTML"
+        )
+
+    # ==========================================
+    #  📢 BROADCAST
+    # ==========================================
+
     @router.message(F.text == "📢 Broadcast")
     async def broadcast_start(message: Message, state: FSMContext):
         if not is_admin(message):
@@ -368,7 +387,10 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         )
         await state.clear()
 
-    # --- Statistics ---
+    # ==========================================
+    #  📊 STATISTIKA
+    # ==========================================
+
     @router.message(F.text == "📊 Statistika")
     async def show_stats(message: Message):
         if not is_admin(message):
@@ -377,29 +399,31 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         users_count = await kino_db.get_users_count()
         today_users = await kino_db.get_today_users_count()
         movies_count = await kino_db.get_movies_count()
-        categories = await kino_db.get_categories()
-        channels = await kino_db.get_channels()
+        sub_channels = await kino_db.get_channels()
+        bot_channels = await kino_db.get_bot_channels()
 
         await message.answer(
             f"📊 <b>Bot Statistikasi</b>\n\n"
             f"👥 Jami foydalanuvchilar: <b>{users_count}</b>\n"
             f"🆕 Bugungi yangi: <b>{today_users}</b>\n"
             f"🎬 Jami kinolar: <b>{movies_count}</b>\n"
-            f"📁 Kategoriyalar: <b>{len(categories)}</b>\n"
-            f"📢 Obuna kanallari: <b>{len(channels)}</b>",
+            f"✅ Majburiy obuna: <b>{len(sub_channels)}</b> ta kanal\n"
+            f"📢 Bot kanali: <b>{len(bot_channels)}</b> ta kanal",
             reply_markup=admin_main_kb(),
             parse_mode="HTML"
         )
 
-    # --- Ban/Unban ---
+    # ==========================================
+    #  🚫 BAN / UNBAN
+    # ==========================================
+
     @router.message(F.text == "🚫 Ban / Unban")
     async def ban_start(message: Message, state: FSMContext):
         if not is_admin(message):
             return
         await message.answer(
             "🚫 <b>Ban / Unban</b>\n\n"
-            "Foydalanuvchi Telegram ID sini kiriting:\n"
-            "(Ban qilish yoki bandan chiqarish)",
+            "Foydalanuvchi Telegram ID sini kiriting:",
             reply_markup=cancel_admin_kb(),
             parse_mode="HTML"
         )
@@ -409,7 +433,6 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
     async def ban_user_id(message: Message, state: FSMContext):
         if not is_admin(message):
             return
-
         try:
             user_id = int(message.text.strip())
         except ValueError:
@@ -441,7 +464,10 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
             )
         await state.clear()
 
-    # --- Cancel ---
+    # ==========================================
+    #  ❌ BEKOR QILISH
+    # ==========================================
+
     @router.callback_query(F.data == "cancel_admin")
     async def cancel_admin(callback: CallbackQuery, state: FSMContext):
         await state.clear()
@@ -451,5 +477,9 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
             reply_markup=admin_main_kb(),
             parse_mode="HTML"
         )
+
+    @router.callback_query(F.data == "noop")
+    async def noop(callback: CallbackQuery):
+        await callback.answer()
 
     return router
