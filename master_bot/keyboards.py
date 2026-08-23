@@ -11,25 +11,25 @@ from master_bot.emojis import (
 
 def main_menu_kb(user_id: int = None):
     buttons = [
-        [KeyboardButton(text=" Bot yaratish", icon_custom_emoji_id=BOT_ID)],
-        [KeyboardButton(text=" Mening botlarim", icon_custom_emoji_id=LIST_ID), 
-         KeyboardButton(text=" Balansim", icon_custom_emoji_id=MONEY_ID)],
-        [KeyboardButton(text=" Referral", icon_custom_emoji_id=LINK_ID), 
-         KeyboardButton(text=" Balans to'ldirish", icon_custom_emoji_id=CARD_ID)],
-        [KeyboardButton(text=" Aloqa", icon_custom_emoji_id=PHONE_ID)],
+        [KeyboardButton(text="Bot yaratish", icon_custom_emoji_id=BOT_ID)],
+        [KeyboardButton(text="Mening botlarim", icon_custom_emoji_id=LIST_ID), 
+         KeyboardButton(text="Balansim", icon_custom_emoji_id=MONEY_ID)],
+        [KeyboardButton(text="Referral", icon_custom_emoji_id=LINK_ID), 
+         KeyboardButton(text="Balans to'ldirish", icon_custom_emoji_id=CARD_ID)],
+        [KeyboardButton(text="Aloqa", icon_custom_emoji_id=PHONE_ID)],
     ]
     if user_id == ADMIN_ID:
-        buttons.append([KeyboardButton(text=" Admin Panel", icon_custom_emoji_id=CROWN_ID)])
+        buttons.append([KeyboardButton(text="Admin Panel", icon_custom_emoji_id=CROWN_ID)])
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 def admin_panel_kb():
     buttons = [
-        [KeyboardButton(text=" Statistika", icon_custom_emoji_id=CHART_ID)],
-        [KeyboardButton(text=" Foydalanuvchilar", icon_custom_emoji_id=PEOPLE_ID), 
-         KeyboardButton(text=" Balans qo'shish", icon_custom_emoji_id=MONEY_ID)],
-        [KeyboardButton(text=" Broadcast", icon_custom_emoji_id=HORN_ID), 
-         KeyboardButton(text=" Barcha botlar", icon_custom_emoji_id=WRENCH_ID)],
-        [KeyboardButton(text=" Orqaga", icon_custom_emoji_id=BACK_ID)],
+        [KeyboardButton(text="Statistika", icon_custom_emoji_id=CHART_ID)],
+        [KeyboardButton(text="Foydalanuvchilar", icon_custom_emoji_id=PEOPLE_ID), 
+         KeyboardButton(text="Balans qo'shish", icon_custom_emoji_id=MONEY_ID)],
+        [KeyboardButton(text="Broadcast", icon_custom_emoji_id=HORN_ID), 
+         KeyboardButton(text="Barcha botlar", icon_custom_emoji_id=WRENCH_ID)],
+        [KeyboardButton(text="Orqaga", icon_custom_emoji_id=BACK_ID)],
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
@@ -78,29 +78,29 @@ def bot_manage_kb(bot_id: int, status: str):
 
 def payment_kb():
     buttons = [
-        [KeyboardButton(text=" To'lov qildim", icon_custom_emoji_id=CARD_ID)],
-        [KeyboardButton(text=" Orqaga", icon_custom_emoji_id=BACK_ID)],
+        [KeyboardButton(text="To'lov qildim", icon_custom_emoji_id=CARD_ID)],
+        [KeyboardButton(text="Orqaga", icon_custom_emoji_id=BACK_ID)],
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
 def payment_approve_kb(user_id: int, amount: int):
     buttons = [
-        [InlineKeyboardButton(text=" Tasdiqlash", callback_data=f"pay_approve:{user_id}:{amount}", icon_custom_emoji_id=CHECK_ID)],
-        [InlineKeyboardButton(text=" Rad etish", callback_data=f"pay_reject:{user_id}", icon_custom_emoji_id=CROSS_ID)],
+        [InlineKeyboardButton(text="Tasdiqlash", callback_data=f"pay_approve:{user_id}:{amount}", icon_custom_emoji_id=CHECK_ID)],
+        [InlineKeyboardButton(text="Rad etish", callback_data=f"pay_reject:{user_id}", icon_custom_emoji_id=CROSS_ID)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def cancel_kb():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=" Bekor qilish", callback_data="cancel", icon_custom_emoji_id=CROSS_ID)]
+        [InlineKeyboardButton(text="Bekor qilish", callback_data="cancel", icon_custom_emoji_id=CROSS_ID)]
     ])
 
 
 def back_kb():
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=" Orqaga", icon_custom_emoji_id=BACK_ID)]],
+        keyboard=[[KeyboardButton(text="Orqaga", icon_custom_emoji_id=BACK_ID)]],
         resize_keyboard=True
     )
 

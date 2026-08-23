@@ -11,7 +11,7 @@ from master_bot.emojis import CROWN, CHART, PEOPLE, HORN, WRENCH, MONEY, CROSS, 
 
 router = Router()
 
-@router.message(F.text == "👑 Admin Panel")
+@router.message(F.text.in_({"👑 Admin Panel", "Admin Panel"}))
 async def admin_panel(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -22,7 +22,7 @@ async def admin_panel(message: Message):
         parse_mode="HTML"
     )
 
-@router.message(F.text == "📊 Statistika")
+@router.message(F.text.in_({"📊 Statistika", "Statistika"}))
 async def admin_stats(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -39,7 +39,7 @@ async def admin_stats(message: Message):
         parse_mode="HTML"
     )
 
-@router.message(F.text == "👥 Foydalanuvchilar")
+@router.message(F.text.in_({"👥 Foydalanuvchilar", "Foydalanuvchilar"}))
 async def show_users_stats(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -65,7 +65,7 @@ async def catch_premium_emoji(message: Message):
         text += "Ushbu kodlarni nusxalab menga yuboring, men kodlarga joylab chiqaman!"
         await message.answer(text, parse_mode="HTML")
 
-@router.message(F.text == "💰 Balans qo'shish")
+@router.message(F.text.in_({"💰 Balans qo'shish", "Balans qo'shish"}))
 async def add_balance_start(message: Message, state: FSMContext):
     if message.from_user.id != ADMIN_ID:
         return
@@ -115,7 +115,7 @@ async def process_amount_balance(message: Message, state: FSMContext):
     
     await state.clear()
 
-@router.message(F.text == "📢 Broadcast")
+@router.message(F.text.in_({"📢 Broadcast", "Broadcast"}))
 async def broadcast_start(message: Message, state: FSMContext):
     if message.from_user.id != ADMIN_ID:
         return

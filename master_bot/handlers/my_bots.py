@@ -8,7 +8,7 @@ from master_bot.emojis import LIST, BOT, WRENCH, CHECK, STOP, CROSS, BACK, DOWN,
 
 router = Router()
 
-@router.message(F.text == "📋 Mening botlarim")
+@router.message(F.text.in_({"📋 Mening botlarim", "Mening botlarim"}))
 async def my_bots_menu(message: Message):
     bots = await get_user_bots(message.from_user.id)
     if not bots:

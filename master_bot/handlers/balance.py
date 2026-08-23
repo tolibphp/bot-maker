@@ -12,7 +12,7 @@ from master_bot.emojis import MONEY, CARD, CHECK, CROSS, SCROLL, DOWN, ID, PERSO
 router = Router()
 
 
-@router.message(F.text == "💰 Balansim")
+@router.message(F.text.in_({"💰 Balansim", "Balansim"}))
 async def show_balance(message: Message):
     balance = await get_balance(message.from_user.id)
 
@@ -69,7 +69,7 @@ async def payment_history_page(callback: CallbackQuery):
     )
 
 
-@router.message(F.text == "💳 Balans to'ldirish")
+@router.message(F.text.in_({"💳 Balans to'ldirish", "Balans to'ldirish"}))
 async def top_up_balance(message: Message):
     await message.answer(
         f"{CARD} <b>Balans to'ldirish</b>\n\n"
@@ -83,7 +83,7 @@ async def top_up_balance(message: Message):
     )
 
 
-@router.message(F.text == "💳 To'lov qildim")
+@router.message(F.text.in_({"💳 To'lov qildim", "To'lov qildim"}))
 async def payment_start(message: Message, state: FSMContext):
     await message.answer(
         f"{MONEY} Qancha pul to'lov qildingiz?\n\n"

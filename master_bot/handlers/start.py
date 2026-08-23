@@ -78,7 +78,7 @@ async def cmd_start(message: Message):
         parse_mode="HTML"
     )
 
-@router.message(F.text == "🔙 Orqaga")
+@router.message(F.text.in_({"🔙 Orqaga", "Orqaga"}))
 async def go_back(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
@@ -87,7 +87,7 @@ async def go_back(message: Message, state: FSMContext):
         parse_mode="HTML"
     )
 
-@router.message(F.text == "📞 Aloqa")
+@router.message(F.text.in_({"📞 Aloqa", "Aloqa"}))
 async def contact(message: Message):
     await message.answer(
         f"{PHONE} <b>Aloqa</b>\n\n"

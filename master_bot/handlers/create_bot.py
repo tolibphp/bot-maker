@@ -15,11 +15,14 @@ from master_bot.emojis import BOT, MONEY, DOWN, CROSS, CHECK, PERSON, GIFT, BACK
 
 router = Router()
 
-@router.message(F.text == "🤖 Bot yaratish")
+@router.message(F.text.in_({"🤖 Bot yaratish", " Bot yaratish", "Bot yaratish"}))
 async def create_bot_start(message: Message, state: FSMContext):
+    if message.chat.type != "private":
+        return
+        
     await message.answer(
-        f"{BOT} <b>Bot yaratish</b>\n\n"
-        f"Quyidagi shablonlardan birini tanlang:",
+        f"{BOT} <b>Qanday bot yaratmoqchisiz?</b>\n\n"
+        f"Kerakli shablonni tanlang:",
         reply_markup=templates_kb(),
         parse_mode="HTML"
     )

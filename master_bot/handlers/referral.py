@@ -10,7 +10,7 @@ REFERRAL_BOT_CREATE_BONUS = 5_000
 
 router = Router()
 
-@router.message(F.text == "🔗 Referral")
+@router.message(F.text.in_({"🔗 Referral", "Referral"}))
 async def show_referral(message: Message):
     user_id = message.from_user.id
     bot = await message.bot.get_me()
