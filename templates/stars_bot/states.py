@@ -5,6 +5,8 @@ class AdminStates(StatesGroup):
     waiting_min_withdraw = State()
     waiting_channel_username = State()
     waiting_payout_channel = State()
+    waiting_ref_photo = State()
+    waiting_broadcast_message = State()
 
 class UserStates(StatesGroup):
     waiting_withdraw_details = State()

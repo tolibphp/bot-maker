@@ -4,8 +4,8 @@ def main_menu_kb():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="⭐️ Stars ishlash")],
-            [KeyboardButton(text="💸 Stars yechish"), KeyboardButton(text="📊 To'lovlar")],
-            [KeyboardButton(text="ℹ️ FAQ")]
+            [KeyboardButton(text="💰 Balansim"), KeyboardButton(text="💸 Stars yechish")],
+            [KeyboardButton(text="📊 To'lovlar"), KeyboardButton(text="ℹ️ FAQ")]
         ],
         resize_keyboard=True
     )
@@ -14,11 +14,18 @@ def admin_main_kb():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="⚙️ Sozlamalar"), KeyboardButton(text="✅ Majburiy obuna")],
-            [KeyboardButton(text="📢 To'lovlar kanali"), KeyboardButton(text="📈 Statistika")],
+            [KeyboardButton(text="📢 To'lovlar kanali"), KeyboardButton(text="🖼 Referral rasm")],
+            [KeyboardButton(text="📢 Broadcast"), KeyboardButton(text="📈 Statistika")],
             [KeyboardButton(text="👤 User rejimi")]
         ],
         resize_keyboard=True
     )
+
+def share_ref_link_kb(ref_link: str):
+    share_url = f"https://t.me/share/url?url={ref_link}&text=O'yin o'ynang va Stars ishlang!"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="↗️ Do'stlarga yuborish", url=share_url)]
+    ])
 
 def settings_kb(ref_bonus: int, min_withdraw: int):
     return InlineKeyboardMarkup(inline_keyboard=[

@@ -73,6 +73,22 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
             parse_mode="HTML"
         )
 
+    @router.message(F.text == "💰 Balansim")
+    async def show_balance(message: Message):
+        if not await check_subscription(message.bot, message.from_user.id, stars_db):
+            await send_subscription_message(message, stars_db)
+            return
+
+        user_id = message.from_user.id
+        user = await stars_db.get_user(user_id)
+        
+        await message.answer(
+            f"💰 <b>Sizning balansingiz</b>\n\n"
+            f"💵 Joriy balans: <b>{user['balance']} ⭐️</b>\n"
+            f"📈 Jami ishlangan: <b>{user.get('total_earned', 0)} ⭐️</b>",
+            parse_mode="HTML"
+        )
+
     @router.message(F.text == "⭐️ Stars ishlash")
     async def earn_stars(message: Message):
         if not await check_subscription(message.bot, message.from_user.id, stars_db):
@@ -86,8 +102,11 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
         ref_count = await stars_db.get_referral_count(user_id)
         ref_bonus = int(await stars_db.get_setting("ref_bonus"))
         user = await stars_db.get_user(user_id)
+        ref_photo = await stars_db.get_setting("ref_photo_id")
 
-        await message.answer(
+        from templates.stars_bot.keyboards import share_ref_link_kb
+
+        text = (
             f"🔗 <b>Do'stlarni taklif qiling!</b>\n\n"
             f"Har bir taklif qilingan do'stingiz uchun <b>{ref_bonus} ⭐️</b> olasiz!\n\n"
             f"📊 <b>Sizning statistika:</b>\n"
@@ -95,9 +114,22 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
             f"💰 Balans: <b>{user['balance']} ⭐️</b>\n\n"
             f"👇 <b>Sizning taklif havolangiz:</b>\n"
             f"<code>{ref_link}</code>\n\n"
-            f"Buni nusxalab do'stlaringizga yuboring!",
-            parse_mode="HTML"
+            f"Buni nusxalab do'stlaringizga yuboring!"
         )
+
+        if ref_photo:
+            await message.answer_photo(
+                photo=ref_photo,
+                caption=text,
+                reply_markup=share_ref_link_kb(ref_link),
+                parse_mode="HTML"
+            )
+        else:
+            await message.answer(
+                text,
+                reply_markup=share_ref_link_kb(ref_link),
+                parse_mode="HTML"
+            )
 
     @router.message(F.text == "💸 Stars yechish")
     async def withdraw_stars(message: Message, state: FSMContext):

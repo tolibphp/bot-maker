@@ -1,4 +1,5 @@
 from datetime import datetime
+import aiosqlite
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
@@ -158,6 +159,67 @@ def create_admin_router(stars_db: StarsDB, admin_id: int) -> Router:
             f"👥 Umumiy foydalanuvchilar: <b>{users_count}</b> ta",
             parse_mode="HTML"
         )
+
+    @router.message(F.text == "🖼 Referral rasm")
+    async def set_ref_photo(message: Message, state: FSMContext):
+        if message.from_user.id != admin_id:
+            return
+        await message.answer(
+            "🖼 Yangi referral rasmini yuboring:\n\n"
+            "<i>Bekor qilish uchun /cancel bosing.</i>",
+            reply_markup=cancel_kb()
+        )
+        await state.set_state(AdminStates.waiting_ref_photo)
+
+    @router.message(AdminStates.waiting_ref_photo, F.photo)
+    async def save_ref_photo(message: Message, state: FSMContext):
+        photo_id = message.photo[-1].file_id
+        await stars_db.set_setting("ref_photo_id", photo_id)
+        await message.answer("✅ Referral rasmi muvaffaqiyatli saqlandi!")
+        await state.clear()
+
+    @router.message(F.text == "📢 Broadcast")
+    async def broadcast_start(message: Message, state: FSMContext):
+        if message.from_user.id != admin_id:
+            return
+        await message.answer(
+            "Barcha foydalanuvchilarga yuboriladigan xabarni yozing:\n\n"
+            "<i>(Xabar, rasm, video yoki istalgan fayl yuborishingiz mumkin)</i>",
+            reply_markup=cancel_kb()
+        )
+        await state.set_state(AdminStates.waiting_broadcast_message)
+
+    @router.message(AdminStates.waiting_broadcast_message)
+    async def broadcast_send(message: Message, state: FSMContext):
+        import asyncio
+        from templates.stars_bot.database import StarsDB
+        
+        await state.clear()
+        
+        # Get all users (we need a way to get all users in database.py, but for now we can just select all)
+        # We don't have get_all_users() in stars_db, so I'll write a quick raw query here
+        async with aiosqlite.connect(stars_db.db_path) as db:
+            cursor = await db.execute("SELECT telegram_id FROM users")
+            users = await cursor.fetchall()
+        
+        if not users:
+            await message.answer("Foydalanuvchilar topilmadi.")
+            return
+            
+        await message.answer(f"📢 Xabar {len(users)} ta foydalanuvchiga yuborilmoqda...")
+        
+        success = 0
+        failed = 0
+        
+        for user in users:
+            try:
+                await message.copy_to(chat_id=user[0])
+                success += 1
+                await asyncio.sleep(0.05) # Prevent flood wait
+            except Exception:
+                failed += 1
+                
+        await message.answer(f"✅ <b>Broadcast yakunlandi!</b>\n\n🟢 Yuborildi: {success}\n🔴 Yuborilmadi: {failed}", parse_mode="HTML")
 
     @router.callback_query(F.data == "close_admin")
     async def close_admin_inline(callback: CallbackQuery):
