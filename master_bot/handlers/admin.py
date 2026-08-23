@@ -46,8 +46,35 @@ async def stats(message: Message):
         parse_mode="HTML"
     )
 
-
 @router.message(F.text == "👥 Foydalanuvchilar")
+async def show_users_stats(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    count = await get_users_count()
+    await message.answer(f"👥 Botdagi jami foydalanuvchilar soni: <b>{count}</b> ta", parse_mode="HTML")
+
+# --- Hiddent Premium Emoji Catcher ---
+@router.message(F.entities)
+async def catch_premium_emoji(message: Message):
+    if message.from_user.id != int(ADMIN_ID):
+        return
+        
+    custom_emojis = []
+    if message.entities:
+        for ent in message.entities:
+            if ent.type == "custom_emoji":
+                emoji_char = message.text[ent.offset : ent.offset + ent.length]
+                custom_emojis.append((emoji_char, ent.custom_emoji_id))
+                
+    if custom_emojis:
+        text = "✨ <b>Premium Emoji ID lari topildi:</b>\n\n"
+        for char, eid in custom_emojis:
+            text += f"Emoji: {char}\nKod: <code>&lt;tg-emoji emoji-id=\"{eid}\"&gt;{char}&lt;/tg-emoji&gt;</code>\n\n"
+        text += "Ushbu kodlarni nusxalab menga yuboring, men kodlarga joylab chiqaman!"
+        await message.answer(text, parse_mode="HTML")
+
+
+@router.message(F.text == "👥 Foydalanuvchilar ro'yxati")
 async def users_list(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
