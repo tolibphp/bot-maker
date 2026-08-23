@@ -45,6 +45,14 @@ class BotManager:
                 db_path=bot_data["db_path"],
                 bot_id=bot_id
             )
+        elif bot_data["template_type"] == "downloader":
+            from templates.downloader_bot import DownloaderBot
+            bot_instance = DownloaderBot(
+                bot_token=bot_data["bot_token"],
+                admin_id=bot_data["owner_telegram_id"],
+                db_path=bot_data["db_path"],
+                bot_id=bot_id
+            )
         else:
             raise ValueError(f"Unknown template type: {bot_data['template_type']}")
 

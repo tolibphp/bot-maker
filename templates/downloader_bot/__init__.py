@@ -1,1 +1,1 @@
-# Downloader Bot Template
+from templates.downloader_bot.bot import DownloaderBot
