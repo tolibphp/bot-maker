@@ -4,7 +4,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from config import ADMIN_ID, ADMIN_USERNAME
-from database.users import add_user_with_referral, get_user, update_balance
+from database.users import add_user_with_referral, add_user, get_user, update_balance
 from database.payments import add_payment
 from master_bot.keyboards import main_menu_kb
 from master_bot.emojis import BOT, MOVIE, STAR, CASH, GIFT, BACK, PHONE, CHECK, PERSON, MONEY
@@ -70,11 +70,12 @@ async def cmd_start(message: Message):
         f"{BOT} <b>Bot Maker</b> ga xush kelibsiz!\n\n"
         f"Bu bot orqali siz o'zingizning Telegram botingizni yaratishingiz mumkin.\n\n"
         f"<blockquote><b>Mavjud shablonlar:</b>\n"
-        f"{MOVIE} Kino Bot — 35,000 so'm\n"
-        f"{STAR} Stars Referral Bot — 35,000 so'm\n"
-        f"{CASH} Premium Pul Ishlash — 50,000 so'm\n\n"
-        f"{GIFT} Birinchi 30 kun <b>BEPUL!</b>\n"
-        f"Keyin kuniga 5,000 so'm.</blockquote>",
+        f"🎬 Kino Bot — 30,000 so'm\n"
+        f"⭐️ Stars Referral Bot — 15,000 so'm\n"
+        f"💸 Premium Pul Ishlash — 15,000 so'm\n"
+        f"📥 Video Yuklovchi Bot — 15,000 so'm\n\n"
+        f"{GIFT} Barchasi uchun birinchi 30 kun <b>BEPUL!</b>\n"
+        f"Keyin kunlik to'lov olinadi.</blockquote>",
         reply_markup=main_menu_kb(message.from_user.id),
         parse_mode="HTML"
     )
