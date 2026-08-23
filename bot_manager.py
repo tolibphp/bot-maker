@@ -24,39 +24,39 @@ class BotManager:
         if not bot_data:
             raise ValueError(f"Bot #{bot_id} not found in database")
 
-        if bot_data["template_type"] == "kino":
-            bot_instance = KinoBot(
-                bot_token=bot_data["bot_token"],
-                admin_id=bot_data["owner_telegram_id"],
-                db_path=bot_data["db_path"],
-                bot_id=bot_id
-            )
-        elif bot_data["template_type"] == "stars":
-            bot_instance = StarsBot(
-                bot_token=bot_data["bot_token"],
-                admin_id=bot_data["owner_telegram_id"],
-                db_path=bot_data["db_path"],
-                bot_id=bot_id
-            )
-        elif bot_data["template_type"] == "money":
-            bot_instance = MoneyBot(
-                bot_token=bot_data["bot_token"],
-                admin_id=bot_data["owner_telegram_id"],
-                db_path=bot_data["db_path"],
-                bot_id=bot_id
-            )
-        elif bot_data["template_type"] == "downloader":
-            from templates.downloader_bot import DownloaderBot
-            bot_instance = DownloaderBot(
-                bot_token=bot_data["bot_token"],
-                admin_id=bot_data["owner_telegram_id"],
-                db_path=bot_data["db_path"],
-                bot_id=bot_id
-            )
-        else:
-            raise ValueError(f"Unknown template type: {bot_data['template_type']}")
-
         try:
+            if bot_data["template_type"] == "kino":
+                bot_instance = KinoBot(
+                    bot_token=bot_data["bot_token"],
+                    admin_id=bot_data["owner_telegram_id"],
+                    db_path=bot_data["db_path"],
+                    bot_id=bot_id
+                )
+            elif bot_data["template_type"] == "stars":
+                bot_instance = StarsBot(
+                    bot_token=bot_data["bot_token"],
+                    admin_id=bot_data["owner_telegram_id"],
+                    db_path=bot_data["db_path"],
+                    bot_id=bot_id
+                )
+            elif bot_data["template_type"] == "money":
+                bot_instance = MoneyBot(
+                    bot_token=bot_data["bot_token"],
+                    admin_id=bot_data["owner_telegram_id"],
+                    db_path=bot_data["db_path"],
+                    bot_id=bot_id
+                )
+            elif bot_data["template_type"] == "downloader":
+                from templates.downloader_bot import DownloaderBot
+                bot_instance = DownloaderBot(
+                    bot_token=bot_data["bot_token"],
+                    admin_id=bot_data["owner_telegram_id"],
+                    db_path=bot_data["db_path"],
+                    bot_id=bot_id
+                )
+            else:
+                raise ValueError(f"Unknown template type: {bot_data['template_type']}")
+
             await bot_instance.start()
             self._running_bots[bot_id] = bot_instance
             await update_bot_status(bot_id, "active")

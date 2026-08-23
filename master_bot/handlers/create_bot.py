@@ -112,13 +112,19 @@ async def token_received(message: Message, state: FSMContext):
 @router.callback_query(F.data == "confirm_create", CreateBotStates.confirming)
 async def confirm_create(callback: CallbackQuery, state: FSMContext, bot_manager=None):
     data = await state.get_data()
+    if not data:
+        await callback.answer("Botingiz allaqachon yaratilmoqda yoki yaratib bo'lindi!", show_alert=True)
+        return
+        
     user_id = callback.from_user.id
-    price = data["price"]
+    price = data.get("price", 0)
+    
+    await state.clear()
+    await callback.answer("Botingiz yaratilmoqda, kuting...", show_alert=False)
     
     balance = await get_balance(user_id)
     if balance < price:
         await callback.message.edit_text(f"{CROSS} Balans yetarli emas!")
-        await state.clear()
         return
     
     await update_balance(user_id, -price)
@@ -183,8 +189,6 @@ async def confirm_create(callback: CallbackQuery, state: FSMContext, bot_manager
             )
         except Exception:
             pass
-
-    await state.clear()
 
 @router.callback_query(F.data == "cancel")
 async def cancel_action(callback: CallbackQuery, state: FSMContext):
