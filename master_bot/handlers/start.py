@@ -3,8 +3,9 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from database.users import add_user, get_user
+from database.users import add_user
 from master_bot.keyboards import main_menu_kb
+from config import ADMIN_USERNAME
 
 router = Router()
 
@@ -41,10 +42,9 @@ async def go_back(message: Message, state: FSMContext):
 
 @router.message(F.text == "📞 Aloqa")
 async def contact(message: Message):
-    from config import ADMIN_ID
     await message.answer(
         f"📞 <b>Aloqa</b>\n\n"
         f"Savollar va takliflar uchun admin ga yozing:\n"
-        f"👤 <a href='tg://user?id={ADMIN_ID}'>Admin</a>",
+        f"👤 {ADMIN_USERNAME}",
         parse_mode="HTML"
     )

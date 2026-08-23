@@ -59,11 +59,27 @@ def my_bots_kb(bots: list):
 def bot_manage_kb(bot_id: int, status: str):
     buttons = []
     if status == "active":
-        buttons.append([InlineKeyboardButton(text="⏹ To'xtatish", callback_data=f"bot_stop:{bot_id}")])
+        buttons.append([InlineKeyboardButton(text="⏸ To'xtatish", callback_data=f"bot_stop:{bot_id}")])
     else:
         buttons.append([InlineKeyboardButton(text="▶️ Ishga tushirish", callback_data=f"bot_start:{bot_id}")])
     buttons.append([InlineKeyboardButton(text="🗑 O'chirish", callback_data=f"bot_delete:{bot_id}")])
     buttons.append([InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_bots")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def payment_kb():
+    buttons = [
+        [KeyboardButton(text="💳 To'lov qildim")],
+        [KeyboardButton(text="🔙 Orqaga")],
+    ]
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
+
+
+def payment_approve_kb(user_id: int, amount: int):
+    buttons = [
+        [InlineKeyboardButton(text="✅ Tasdiqlash", callback_data=f"pay_approve:{user_id}:{amount}")],
+        [InlineKeyboardButton(text="❌ Rad etish", callback_data=f"pay_reject:{user_id}")],
+    ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 

@@ -7,6 +7,11 @@ class CreateBotStates(StatesGroup):
     confirming = State()
 
 
+class PaymentStates(StatesGroup):
+    waiting_amount = State()
+    waiting_screenshot = State()
+
+
 class AdminAddBalanceStates(StatesGroup):
     waiting_user_id = State()
     waiting_amount = State()
