@@ -86,9 +86,7 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         if bot_channels:
             bot_me = await message.bot.get_me()
             post_caption = (
-                f"┏━━━━━━━━━━━━━━━━━━━┓\n"
-                f"    🎬 <b>{data['movie_name']}</b>\n"
-                f"┗━━━━━━━━━━━━━━━━━━━┛\n\n"
+                f"🎬 <b>{data['movie_name']}</b>\n\n"
                 f"🔑 Kod: <code>#{code}</code>\n\n"
                 f"👇 <b>Ko'rish uchun tugmani bosing</b>"
             )

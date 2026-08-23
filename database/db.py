@@ -52,5 +52,13 @@ async def init_master_db():
             );
         """)
         await db.commit()
+
+        # Add referred_by column if it doesn't exist (migration for existing DBs)
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN referred_by INTEGER")
+            await db.commit()
+        except Exception:
+            pass  # Column already exists
+
     finally:
         await db.close()
