@@ -168,6 +168,31 @@ async def confirm_create(callback: CallbackQuery, state: FSMContext, bot_manager
         f"Admin panel: botingizga /start yuboring!",
         parse_mode="HTML"
     )
+
+    # --- Referral bonus: referred user created a bot ---
+    from database.users import get_referrer
+    REFERRAL_BOT_CREATE_BONUS = 5_000
+
+    referrer_id = await get_referrer(user_id)
+    if referrer_id:
+        await update_balance(referrer_id, REFERRAL_BOT_CREATE_BONUS)
+        await add_payment(
+            user_telegram_id=referrer_id,
+            amount=REFERRAL_BOT_CREATE_BONUS,
+            payment_type="referral_bot_create",
+            description=f"Referral bonus: bot yaratdi (@{data['bot_username']})"
+        )
+        try:
+            await callback.bot.send_message(
+                referrer_id,
+                f"🎉 <b>Referral bonus!</b>\n\n"
+                f"🤖 Sizning referalingiz bot yaratdi: @{data['bot_username']}\n"
+                f"💰 <b>+{REFERRAL_BOT_CREATE_BONUS:,} so'm</b> balansga qo'shildi!",
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
+
     await state.clear()
 
 

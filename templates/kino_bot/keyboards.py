@@ -40,7 +40,7 @@ def movie_share_kb(bot_username: str, code: str, movie_name: str):
 def channel_post_kb(bot_username: str):
     """Button under channel post — link to bot."""
     buttons = [
-        [InlineKeyboardButton(text="▶️ Botda ko'rish", url=f"https://t.me/{bot_username}")]
+        [InlineKeyboardButton(text="🎬 Kinoni ko'rish", url=f"https://t.me/{bot_username}")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

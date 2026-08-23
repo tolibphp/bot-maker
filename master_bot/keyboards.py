@@ -9,7 +9,8 @@ def main_menu_kb(user_id: int = None):
     buttons = [
         [KeyboardButton(text="🤖 Bot yaratish")],
         [KeyboardButton(text="📋 Mening botlarim"), KeyboardButton(text="💰 Balansim")],
-        [KeyboardButton(text="💳 Balans to'ldirish"), KeyboardButton(text="📞 Aloqa")],
+        [KeyboardButton(text="🔗 Referral"), KeyboardButton(text="💳 Balans to'ldirish")],
+        [KeyboardButton(text="📞 Aloqa")],
     ]
     if user_id == ADMIN_ID:
         buttons.append([KeyboardButton(text="👑 Admin Panel")])

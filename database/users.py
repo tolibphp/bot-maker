@@ -76,3 +76,47 @@ async def set_balance(telegram_id: int, amount: int):
         await db.commit()
     finally:
         await db.close()
+
+
+async def add_user_with_referral(telegram_id: int, username: str = None,
+                                  full_name: str = None, referred_by: int = None):
+    """Add user with referral info. Returns True if NEW user, False if exists."""
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT telegram_id FROM users WHERE telegram_id = ?", (telegram_id,)
+        )
+        existing = await cursor.fetchone()
+        if existing:
+            return False  # User already exists
+
+        await db.execute(
+            "INSERT INTO users (telegram_id, username, full_name, referred_by) VALUES (?, ?, ?, ?)",
+            (telegram_id, username, full_name, referred_by)
+        )
+        await db.commit()
+        return True  # New user
+    finally:
+        await db.close()
+
+
+async def get_referral_count(telegram_id: int) -> int:
+    """Count how many users were referred by this user."""
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT COUNT(*) as count FROM users WHERE referred_by = ?",
+            (telegram_id,)
+        )
+        row = await cursor.fetchone()
+        return row["count"] if row else 0
+    finally:
+        await db.close()
+
+
+async def get_referrer(telegram_id: int):
+    """Get the referrer's telegram_id for this user."""
+    user = await get_user(telegram_id)
+    if user and user.get("referred_by"):
+        return user["referred_by"]
+    return None

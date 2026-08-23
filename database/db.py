@@ -23,6 +23,7 @@ async def init_master_db():
                 username TEXT,
                 full_name TEXT,
                 balance INTEGER DEFAULT 0,
+                referred_by INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
