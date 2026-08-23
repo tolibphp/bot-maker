@@ -2,14 +2,16 @@ import asyncio
 import logging
 
 from database.bots import get_all_active_bots, get_bot, update_bot_status
+from templates.base_template import BaseTemplate
 from templates.kino_bot import KinoBot
+from templates.stars_bot import StarsBot
 
 logger = logging.getLogger(__name__)
 
 
 class BotManager:
     def __init__(self):
-        self._running_bots: dict[int, KinoBot] = {}  # bot_id -> KinoBot instance
+        self._running_bots: dict[int, BaseTemplate] = {}  # bot_id -> Bot instance
 
     async def start_bot(self, bot_id: int):
         """Start a bot by its database ID."""
@@ -23,6 +25,13 @@ class BotManager:
 
         if bot_data["template_type"] == "kino":
             bot_instance = KinoBot(
+                bot_token=bot_data["bot_token"],
+                admin_id=bot_data["owner_telegram_id"],
+                db_path=bot_data["db_path"],
+                bot_id=bot_id
+            )
+        elif bot_data["template_type"] == "stars":
+            bot_instance = StarsBot(
                 bot_token=bot_data["bot_token"],
                 admin_id=bot_data["owner_telegram_id"],
                 db_path=bot_data["db_path"],

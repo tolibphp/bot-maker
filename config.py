@@ -26,5 +26,9 @@ TEMPLATES = {
         "name": "🎬 Kino Bot",
         "description": "Professional kino bot — qidirish, kategoriya, admin panel",
         "price": BOT_CREATE_PRICE,
+    },
+    "stars": {
+        "name": "⭐️ Stars Referral Bot",
+        "price": BOT_CREATE_PRICE
     }
 }
