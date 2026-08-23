@@ -31,7 +31,7 @@ class DownloaderBot(BaseTemplate):
         self.dp['db'] = self.down_db
         
         # Register routers
-        self.dp.include_router(create_router())
+        self.dp.include_router(create_router(self.admin_id))
 
     async def start(self):
         """Start bot polling."""

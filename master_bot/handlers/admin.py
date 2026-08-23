@@ -161,6 +161,33 @@ async def broadcast_send(message: Message, state: FSMContext):
     await state.clear()
     await admin_panel(message)
 
+@router.message(F.text.in_({"🔧 Barcha botlar", "Barcha botlar"}))
+async def admin_all_bots(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    
+    bots = await get_all_bots()
+    if not bots:
+        await message.answer(f"{WRENCH} Hozircha tizimda botlar yo'q.", parse_mode="HTML")
+        return
+        
+    text = f"{WRENCH} <b>Barcha yaratilgan botlar:</b>\n\n"
+    
+    for i, bot in enumerate(bots, 1):
+        username = bot.get("bot_username", "Noma'lum")
+        template = bot.get("template_type", "Noma'lum")
+        status = bot.get("status", "unknown")
+        
+        status_emoji = CHECK if status == "active" else CROSS
+        text += f"{i}. <b>@{username}</b> | Shablon: <i>{template}</i> | Holat: {status_emoji} {status}\n"
+        
+        if i % 30 == 0:
+            await message.answer(text, parse_mode="HTML")
+            text = ""
+            
+    if text:
+        await message.answer(text, parse_mode="HTML")
+
 @router.callback_query(F.data.startswith("pay_approve:"))
 async def approve_payment(callback: CallbackQuery):
     _, user_id_str, amount_str = callback.data.split(":")
