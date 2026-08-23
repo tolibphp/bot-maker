@@ -34,7 +34,11 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
                 except ValueError:
                     pass
 
-        is_new = await stars_db.add_user(user_id, referred_by=referrer_id)
+        is_new = await stars_db.add_user(
+            telegram_id=user_id, 
+            username=message.from_user.username, 
+            referred_by=referrer_id
+        )
         
         if is_new and referrer_id:
             # Reward referrer

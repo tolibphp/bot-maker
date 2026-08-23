@@ -7,6 +7,8 @@ class AdminStates(StatesGroup):
     waiting_payout_channel = State()
     waiting_ref_photo = State()
     waiting_broadcast_message = State()
+    waiting_add_balance_user = State()
+    waiting_add_balance_amount = State()
 
 class UserStates(StatesGroup):
     waiting_withdraw_details = State()

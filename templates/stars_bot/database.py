@@ -13,6 +13,7 @@ class StarsDB:
             await db.executescript("""
                 CREATE TABLE IF NOT EXISTS users (
                     telegram_id INTEGER PRIMARY KEY,
+                    username TEXT,
                     balance INTEGER DEFAULT 0,
                     total_earned INTEGER DEFAULT 0,
                     referred_by INTEGER,
@@ -31,24 +32,41 @@ class StarsDB:
                 );
             """)
             
+            # Migration: add username column if it doesn't exist
+            try:
+                await db.execute("ALTER TABLE users ADD COLUMN username TEXT")
+            except Exception:
+                pass
+
             # Default settings
             await db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ref_bonus', '3')")
             await db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('min_withdraw', '15')")
             await db.commit()
 
-    async def add_user(self, telegram_id: int, referred_by: int = None) -> bool:
+    async def add_user(self, telegram_id: int, username: str = None, referred_by: int = None) -> bool:
         """Add user. Return True if new."""
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute("SELECT telegram_id FROM users WHERE telegram_id = ?", (telegram_id,))
             if await cursor.fetchone():
+                # Update username just in case it changed
+                await db.execute("UPDATE users SET username = ? WHERE telegram_id = ?", (username, telegram_id))
+                await db.commit()
                 return False
             
             await db.execute(
-                "INSERT INTO users (telegram_id, referred_by) VALUES (?, ?)",
-                (telegram_id, referred_by)
+                "INSERT INTO users (telegram_id, username, referred_by) VALUES (?, ?, ?)",
+                (telegram_id, username, referred_by)
             )
             await db.commit()
             return True
+
+    async def get_user_by_username(self, username: str):
+        username = username.replace("@", "").lower()
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute("SELECT * FROM users WHERE LOWER(username) = ?", (username,))
+            row = await cursor.fetchone()
+            return dict(row) if row else None
 
     async def get_user(self, telegram_id: int):
         async with aiosqlite.connect(self.db_path) as db:

@@ -165,8 +165,7 @@ def create_admin_router(stars_db: StarsDB, admin_id: int) -> Router:
         if message.from_user.id != admin_id:
             return
         await message.answer(
-            "🖼 Yangi referral rasmini yuboring:\n\n"
-            "<i>Bekor qilish uchun /cancel bosing.</i>",
+            "🖼 Yangi referral rasmini yuboring:",
             reply_markup=cancel_kb()
         )
         await state.set_state(AdminStates.waiting_ref_photo)
@@ -220,6 +219,74 @@ def create_admin_router(stars_db: StarsDB, admin_id: int) -> Router:
                 failed += 1
                 
         await message.answer(f"✅ <b>Broadcast yakunlandi!</b>\n\n🟢 Yuborildi: {success}\n🔴 Yuborilmadi: {failed}", parse_mode="HTML")
+
+    @router.message(F.text == "💰 Balans qo'shish")
+    async def add_balance_start(message: Message, state: FSMContext):
+        if message.from_user.id != admin_id:
+            return
+        await message.answer(
+            "Foydalanuvchining ID raqamini yoki @usernamesini yuboring:",
+            reply_markup=cancel_kb(),
+            parse_mode="HTML"
+        )
+        await state.set_state(AdminStates.waiting_add_balance_user)
+
+    @router.message(AdminStates.waiting_add_balance_user)
+    async def add_balance_user(message: Message, state: FSMContext):
+        query = message.text.strip()
+        user = None
+
+        if query.startswith("@") or not query.isdigit():
+            user = await stars_db.get_user_by_username(query)
+        else:
+            try:
+                user = await stars_db.get_user(int(query))
+            except ValueError:
+                pass
+
+        if not user:
+            await message.answer("❌ Foydalanuvchi topilmadi! Boshqa ID yoki username kiritib ko'ring.")
+            return
+
+        await state.update_data(target_user_id=user["telegram_id"])
+        await message.answer(
+            f"👤 Foydalanuvchi topildi!\n"
+            f"🆔 ID: <code>{user['telegram_id']}</code>\n"
+            f"💰 Joriy balans: <b>{user['balance']} ⭐️</b>\n\n"
+            f"Qancha Stars qo'shmoqchisiz? (Faqat raqam kiriting)",
+            parse_mode="HTML"
+        )
+        await state.set_state(AdminStates.waiting_add_balance_amount)
+
+    @router.message(AdminStates.waiting_add_balance_amount)
+    async def add_balance_amount(message: Message, state: FSMContext):
+        try:
+            amount = int(message.text)
+        except ValueError:
+            await message.answer("Faqat raqam kiriting!")
+            return
+
+        data = await state.get_data()
+        target_user_id = data["target_user_id"]
+
+        await stars_db.update_balance(target_user_id, amount)
+        
+        await message.answer(
+            f"✅ Foydalanuvchi balansiga <b>{amount} ⭐️</b> muvaffaqiyatli qo'shildi!",
+            parse_mode="HTML"
+        )
+
+        try:
+            await message.bot.send_message(
+                target_user_id,
+                f"🎉 <b>Tabriklaymiz!</b>\n\n"
+                f"Admin tomonidan balansingizga <b>{amount} ⭐️</b> qo'shildi!",
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
+            
+        await state.clear()
 
     @router.callback_query(F.data == "close_admin")
     async def close_admin_inline(callback: CallbackQuery):

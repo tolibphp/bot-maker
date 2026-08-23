@@ -15,8 +15,8 @@ def admin_main_kb():
         keyboard=[
             [KeyboardButton(text="⚙️ Sozlamalar"), KeyboardButton(text="✅ Majburiy obuna")],
             [KeyboardButton(text="📢 To'lovlar kanali"), KeyboardButton(text="🖼 Referral rasm")],
-            [KeyboardButton(text="📢 Broadcast"), KeyboardButton(text="📈 Statistika")],
-            [KeyboardButton(text="👤 User rejimi")]
+            [KeyboardButton(text="📢 Broadcast"), KeyboardButton(text="💰 Balans qo'shish")],
+            [KeyboardButton(text="📈 Statistika"), KeyboardButton(text="👤 User rejimi")]
         ],
         resize_keyboard=True
     )
