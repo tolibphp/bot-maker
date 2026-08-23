@@ -23,17 +23,25 @@ async def check_daily_payments():
 
         # Check owner's balance
         balance = await get_balance(owner_id)
+        
+        # Get dynamic daily price from TEMPLATES
+        from config import TEMPLATES
+        template = TEMPLATES.get(bot_data['template_type'], {})
+        daily_price = template.get('daily_price', 2000)
 
-        if balance >= DAILY_FEE:
+        if balance >= daily_price:
             # Deduct daily fee
-            await update_balance(owner_id, -DAILY_FEE)
+            await update_balance(owner_id, -daily_price)
             await add_payment(
                 user_telegram_id=owner_id,
-                amount=-DAILY_FEE,
+                amount=-daily_price,
                 payment_type="daily_fee",
                 description=f"Kunlik to'lov: @{bot_data['bot_username']}"
             )
-            await update_last_payment(bot_id)
+            # EXTEND free_until by 1 day so it doesn't deduct next hour
+            from database.bots import extend_bot_free_until
+            await extend_bot_free_until(bot_id, 1)
+            
             logger.info(
                 f"Daily fee collected for bot #{bot_id} "
                 f"(@{bot_data['bot_username']}) from user {owner_id}"
@@ -42,15 +50,15 @@ async def check_daily_payments():
             # Notify owner
             try:
                 from aiogram import Bot as AioBot
-                # We need the master bot to send notification
                 from config import MASTER_TOKEN
+                from master_bot.emojis import MONEY, BOT, CHECK
                 notify_bot = AioBot(token=MASTER_TOKEN)
                 await notify_bot.send_message(
                     owner_id,
-                    f"💰 <b>Kunlik to'lov</b>\n\n"
-                    f"🤖 @{bot_data['bot_username']} uchun\n"
-                    f"💸 {DAILY_FEE:,} so'm yechildi\n"
-                    f"💰 Qoldiq: {balance - DAILY_FEE:,} so'm",
+                    f"{CHECK} <b>Kunlik to'lov</b>\n\n"
+                    f"{BOT} @{bot_data['bot_username']} uchun\n"
+                    f"{MONEY} {daily_price:,} so'm yechildi\n"
+                    f"Qoldiq: <b>{balance - daily_price:,} so'm</b>",
                     parse_mode="HTML"
                 )
                 await notify_bot.session.close()
@@ -58,13 +66,13 @@ async def check_daily_payments():
                 pass
 
         else:
-            # Not enough balance — stop the bot
+            # Not enough balance - stop the bot
             from bot_manager import manager
             await manager.stop_bot(bot_id)
             await update_bot_status(bot_id, "expired")
 
             logger.warning(
-                f"Bot #{bot_id} (@{bot_data['bot_username']}) stopped — "
+                f"Bot #{bot_id} (@{bot_data['bot_username']}) stopped - "
                 f"insufficient balance for user {owner_id}"
             )
 
@@ -72,14 +80,15 @@ async def check_daily_payments():
             try:
                 from aiogram import Bot as AioBot
                 from config import MASTER_TOKEN
+                from master_bot.emojis import CROSS, BOT, MONEY, CARD
                 notify_bot = AioBot(token=MASTER_TOKEN)
                 await notify_bot.send_message(
                     owner_id,
-                    f"⛔ <b>Bot to'xtatildi!</b>\n\n"
-                    f"🤖 @{bot_data['bot_username']}\n"
-                    f"💰 Balans yetarli emas ({balance:,} so'm)\n"
-                    f"💲 Kerakli summa: {DAILY_FEE:,} so'm/kun\n\n"
-                    f"💳 Balansni to'ldirib, botni qayta ishga tushiring.",
+                    f"{CROSS} <b>Bot to'xtatildi!</b>\n\n"
+                    f"{BOT} @{bot_data['bot_username']}\n"
+                    f"{MONEY} Balans yetarli emas ({balance:,} so'm)\n"
+                    f"{CARD} Kerakli summa: {daily_price:,} so'm/kun\n\n"
+                    f"Iltimos, balansni to'ldirib, botni qayta ishga tushiring.",
                     parse_mode="HTML"
                 )
                 await notify_bot.session.close()

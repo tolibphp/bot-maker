@@ -45,11 +45,26 @@ async def manage_bot(callback: CallbackQuery):
     status = "Faol" if bot["status"] == "active" else "To'xtatilgan"
     status_emoji = CHECK if bot["status"] == "active" else STOP
     username = f"@{bot['bot_username']}" if bot['bot_username'] else "Noma'lum"
+    
+    template_info = TEMPLATES.get(bot['template_type'], {})
+    daily_price = template_info.get('daily_price', 2000)
+    
+    from datetime import datetime
+    if bot['free_until']:
+        free_until_dt = datetime.fromisoformat(bot['free_until'])
+        if free_until_dt > datetime.now():
+            days_left = (free_until_dt - datetime.now()).days
+            trial_text = f"{GIFT} Bepul davr: <b>{days_left} kun qoldi</b>"
+        else:
+            trial_text = f"{MONEY} Kunlik to'lov: <b>{daily_price:,} so'm/kun</b>"
+    else:
+        trial_text = f"{MONEY} Kunlik to'lov: <b>{daily_price:,} so'm/kun</b>"
 
     text = (
         f"{BOT} <b>Botingiz:</b> {username}\n"
-        f"<blockquote>{WRENCH} Shablon: <b>{TEMPLATES[bot['template_type']]['name']}</b>\n"
-        f"Holati: {status_emoji} <b>{status}</b></blockquote>\n\n"
+        f"<blockquote>{WRENCH} Shablon: <b>{template_info.get('name', 'Noma\\'lum')}</b>\n"
+        f"Holati: {status_emoji} <b>{status}</b>\n"
+        f"{trial_text}</blockquote>\n\n"
         f"Nimani o'zgartirmoqchisiz?"
     )
 

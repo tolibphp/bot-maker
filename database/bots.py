@@ -1,5 +1,5 @@
-from database.db import get_db
-from datetime import datetime
+﻿from database.db import get_db
+from datetime import datetime, timedelta
 
 
 async def add_bot(
@@ -147,5 +147,24 @@ async def get_bots_needing_payment():
         )
         rows = await cursor.fetchall()
         return [dict(r) for r in rows]
+    finally:
+        await db.close()
+
+async def extend_bot_free_until(bot_id: int, additional_days: int):
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT free_until FROM bots WHERE id = ?", (bot_id,))
+        row = await cursor.fetchone()
+        if row and row['free_until']:
+            current_date = datetime.fromisoformat(row['free_until'])
+            new_date = current_date + timedelta(days=additional_days)
+            if new_date < datetime.now():
+                new_date = datetime.now() + timedelta(days=additional_days)
+                
+            await db.execute(
+                "UPDATE bots SET free_until = ? WHERE id = ?",
+                (new_date.isoformat(), bot_id)
+            )
+            await db.commit()
     finally:
         await db.close()

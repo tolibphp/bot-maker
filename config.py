@@ -22,17 +22,8 @@ FREE_TRIAL_DAYS = 30
 
 # Bot templates
 TEMPLATES = {
-    "kino": {
-        "name": "🎬 Kino Bot",
-        "description": "Professional kino bot — qidirish, kategoriya, admin panel",
-        "price": BOT_CREATE_PRICE,
-    },
-    "stars": {
-        "name": "⭐️ Stars Referral Bot",
-        "price": BOT_CREATE_PRICE
-    },
-    "money": {
-        "name": "💸 Premium Pul Ishlash",
-        "price": 50000
-    }
+    "kino": {"name": "🎬 Kino Bot", "price": 35_000, "module": "kino_bot", "daily_price": 5000},
+    "stars": {"name": "⭐️ Stars Referral Bot", "price": 35_000, "module": "stars_bot", "daily_price": 5000},
+    "money": {"name": "💸 Premium Pul Ishlash", "price": 50_000, "module": "money_bot", "daily_price": 5000},
+    "downloader": {"name": "📥 Video Yuklovchi Bot", "price": 15_000, "module": "downloader_bot", "daily_price": 2000}
 }
