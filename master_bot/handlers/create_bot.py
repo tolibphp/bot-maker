@@ -148,12 +148,13 @@ async def confirm_create(callback: CallbackQuery, state: FSMContext, bot_manager
         free_until=free_until
     )
     
+    import html
     from bot_manager import manager
     try:
         await manager.start_bot(bot_id)
         status_text = f"{CHECK} Bot muvaffaqiyatli ishga tushdi!"
     except Exception as e:
-        status_text = f"{CROSS} Bot yaratildi, lekin ishga tushirishda xatolik: {e}"
+        status_text = f"{CROSS} Bot yaratildi, lekin ishga tushirishda xatolik: {html.escape(str(e))}"
     
     await callback.message.edit_text(
         f"{GIFT} <b>Tabriklaymiz!</b>\n\n"

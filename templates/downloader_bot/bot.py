@@ -7,7 +7,7 @@ from aiogram.client.default import DefaultBotProperties
 
 from templates.base_template import BaseTemplate
 from templates.downloader_bot.database.db import DownloaderDB
-from templates.downloader_bot.handlers.main import router
+from templates.downloader_bot.handlers.main import create_router
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class DownloaderBot(BaseTemplate):
         self.dp['db'] = self.down_db
         
         # Register routers
-        self.dp.include_router(router)
+        self.dp.include_router(create_router())
 
     async def start(self):
         """Start bot polling."""
