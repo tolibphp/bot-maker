@@ -11,7 +11,7 @@ from database.bots import add_bot, get_bot_by_token
 from database.payments import add_payment
 from master_bot.keyboards import templates_kb, confirm_create_kb, main_menu_kb, cancel_kb
 from master_bot.states import CreateBotStates
-from master_bot.emojis import BOT, MONEY, DOWN, CROSS, CHECK, PERSON, GIFT, BACK
+from master_bot.emojis import BOT, MONEY, DOWN, CROSS, CHECK, PERSON, GIFT, BACK, LIST, CLOCK
 
 router = Router()
 
@@ -37,7 +37,7 @@ async def template_chosen(callback: CallbackQuery, state: FSMContext):
         await callback.answer("Shablon topilmadi!", show_alert=True)
         return
     
-    balance = await get_balance(callback.fromuser.id)
+    balance = await get_balance(callback.from_user.id)
     price = template["price"]
     
     if balance < price:
@@ -153,10 +153,10 @@ async def confirm_create(callback: CallbackQuery, state: FSMContext, bot_manager
         f"{GIFT} <b>Tabriklaymiz!</b>\n\n"
         f"{status_text}\n\n"
         f"<blockquote>{BOT} Bot: @{data['bot_username']}\n"
-        f"📋 Shablon: {data['template_type']}\n"
+        f"{LIST} Shablon: {data['template_type']}\n"
         f"{MONEY} To'landi: {price:,} so'm\n"
         f"{GIFT} Bepul davr: {FREE_TRIAL_DAYS} kun\n"
-        f"📅 Bepul davr tugashi: {free_until.strftime('%d.%m.%Y')}</blockquote>\n\n"
+        f"{CLOCK} Bepul davr tugashi: {free_until.strftime('%d.%m.%Y')}</blockquote>\n\n"
         f"Admin panel: botingizga /start yuboring!",
         parse_mode="HTML"
     )
