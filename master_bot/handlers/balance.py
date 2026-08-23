@@ -7,6 +7,7 @@ from database.users import get_balance
 from database.payments import get_user_payments, get_user_payments_count
 from master_bot.keyboards import main_menu_kb, payment_kb, payment_approve_kb, balance_kb, payment_history_kb
 from master_bot.states import PaymentStates
+from master_bot.emojis import MONEY, CARD, CHECK, CROSS, SCROLL, DOWN, ID, PERSON
 
 router = Router()
 
@@ -16,8 +17,8 @@ async def show_balance(message: Message):
     balance = await get_balance(message.from_user.id)
 
     text = (
-        f"💰 <b>Balansim</b>\n\n"
-        f"💵 Joriy balans: <b>{balance:,} so'm</b>\n"
+        f"{MONEY} <b>Sizning balansingiz</b>\n\n"
+        f"<blockquote>{MONEY} Joriy balans: <b>{balance:,} so'm</b></blockquote>"
     )
 
     await message.answer(text, reply_markup=balance_kb(), parse_mode="HTML")
@@ -28,8 +29,8 @@ async def back_to_balance(callback: CallbackQuery):
     balance = await get_balance(callback.from_user.id)
 
     text = (
-        f"💰 <b>Balansim</b>\n\n"
-        f"💵 Joriy balans: <b>{balance:,} so'm</b>\n"
+        f"{MONEY} <b>Sizning balansingiz</b>\n\n"
+        f"<blockquote>{MONEY} Joriy balans: <b>{balance:,} so'm</b></blockquote>"
     )
 
     await callback.message.edit_text(text, reply_markup=balance_kb(), parse_mode="HTML")
@@ -55,11 +56,11 @@ async def payment_history_page(callback: CallbackQuery):
     offset = page * per_page
     payments = await get_user_payments(user_id, limit=per_page, offset=offset)
 
-    text = f"📜 <b>To'lovlar tarixi</b> (Jami: {total})\n\n"
+    text = f"{SCROLL} <b>To'lovlar tarixi</b> (Jami: {total})\n\n"
     for p in payments:
-        emoji = "🟢" if p["amount"] > 0 else "🔴"
-        date_str = p["created_at"][:16]  # Limit to YYYY-MM-DD HH:MM
-        text += f"{emoji} <b>{abs(p['amount']):,} so'm</b>\n└ <i>{p['description'] or p['payment_type']}</i>\n└ 🕒 {date_str}\n\n"
+        emoji = "➕" if p["amount"] > 0 else "➖"
+        date_str = p["created_at"][:16]
+        text += f"<blockquote>{emoji} <b>{abs(p['amount']):,} so'm</b>\n<i>{p['description'] or p['payment_type']}</i>\n📅 {date_str}</blockquote>\n"
 
     await callback.message.edit_text(
         text, 
@@ -71,12 +72,12 @@ async def payment_history_page(callback: CallbackQuery):
 @router.message(F.text == "💳 Balans to'ldirish")
 async def top_up_balance(message: Message):
     await message.answer(
-        f"💳 <b>Balans to'ldirish</b>\n\n"
-        f"🏦 Quyidagi kartaga pul o'tkazing:\n\n"
-        f"💳 Karta: <code>{PAYMENT_CARD}</code>\n"
-        f"👤 Egasi: <b>{PAYMENT_CARD_HOLDER}</b>\n\n"
-        f"🆔 Sizning ID: <code>{message.from_user.id}</code>\n\n"
-        f"To'lovni amalga oshirgach, quyidagi tugmani bosing ⬇️",
+        f"{CARD} <b>Balans to'ldirish</b>\n\n"
+        f"Quyidagi kartaga pul o'tkazing:\n\n"
+        f"<blockquote>{CARD} Karta: <code>{PAYMENT_CARD}</code>\n"
+        f"{PERSON} Egasi: <b>{PAYMENT_CARD_HOLDER}</b>\n\n"
+        f"{ID} Sizning ID: <code>{message.from_user.id}</code></blockquote>\n\n"
+        f"To'lovni amalga oshirgach, quyidagi tugmani bosing {DOWN}",
         reply_markup=payment_kb(),
         parse_mode="HTML"
     )
@@ -85,8 +86,8 @@ async def top_up_balance(message: Message):
 @router.message(F.text == "💳 To'lov qildim")
 async def payment_start(message: Message, state: FSMContext):
     await message.answer(
-        "💰 Qancha pul to'lov qildingiz?\n\n"
-        "Summani kiriting (masalan: <code>35000</code>):",
+        f"{MONEY} Qancha pul to'lov qildingiz?\n\n"
+        f"Summani kiriting (masalan: <code>35000</code>):",
         parse_mode="HTML"
     )
     await state.set_state(PaymentStates.waiting_amount)
@@ -99,13 +100,13 @@ async def payment_amount(message: Message, state: FSMContext):
         if amount <= 0:
             raise ValueError
     except ValueError:
-        await message.answer("❌ Noto'g'ri summa. Faqat raqam kiriting (masalan: 35000):")
+        await message.answer(f"{CROSS} Noto'g'ri summa. Faqat raqam kiriting (masalan: 35000):")
         return
 
     await state.update_data(payment_amount=amount)
     await message.answer(
-        f"💰 Summa: <b>{amount:,} so'm</b>\n\n"
-        f"📸 Endi to'lov chekining <b>skrinshot</b>ini yuboring:",
+        f"<blockquote>{MONEY} Summa: <b>{amount:,} so'm</b></blockquote>\n\n"
+        f"Endi to'lov chekining <b>skrinshot</b>ini yuboring:",
         parse_mode="HTML"
     )
     await state.set_state(PaymentStates.waiting_screenshot)
@@ -119,11 +120,11 @@ async def payment_screenshot(message: Message, state: FSMContext):
 
     # Send to admin for approval
     admin_text = (
-        f"💳 <b>Yangi to'lov so'rovi!</b>\n\n"
-        f"👤 Foydalanuvchi: {user.full_name}\n"
-        f"🆔 ID: <code>{user.id}</code>\n"
-        f"👤 Username: @{user.username or 'yo\'q'}\n"
-        f"💰 Summa: <b>{amount:,} so'm</b>\n\n"
+        f"{MONEY} <b>Yangi to'lov so'rovi!</b>\n\n"
+        f"<blockquote>{PERSON} Foydalanuvchi: {user.full_name}\n"
+        f"{ID} ID: <code>{user.id}</code>\n"
+        f"{PERSON} Username: @{user.username or 'yo\'q'}\n"
+        f"{MONEY} Summa: <b>{amount:,} so'm</b></blockquote>\n\n"
         f"Tasdiqlaysizmi?"
     )
 
@@ -139,10 +140,10 @@ async def payment_screenshot(message: Message, state: FSMContext):
         pass
 
     await message.answer(
-        f"✅ <b>So'rov yuborildi!</b>\n\n"
-        f"💰 Summa: {amount:,} so'm\n"
-        f"⏳ Admin tekshirgandan so'ng balansga qo'shiladi.\n\n"
-        f"📞 Savol bo'lsa: {ADMIN_USERNAME}",
+        f"{CHECK} <b>So'rov yuborildi!</b>\n\n"
+        f"<blockquote>{MONEY} Summa: {amount:,} so'm\n"
+        f"{CHECK} Admin tekshirgandan so'ng balansga qo'shiladi.\n\n"
+        f"Savol bo'lsa: {ADMIN_USERNAME}</blockquote>",
         reply_markup=main_menu_kb(message.from_user.id),
         parse_mode="HTML"
     )
@@ -152,6 +153,6 @@ async def payment_screenshot(message: Message, state: FSMContext):
 @router.message(PaymentStates.waiting_screenshot)
 async def payment_screenshot_invalid(message: Message):
     await message.answer(
-        "❌ Iltimos, to'lov chekining <b>rasmini</b> (skrinshot) yuboring.",
+        f"{CROSS} Iltimos, to'lov chekining <b>rasmini</b> (skrinshot) yuboring.",
         parse_mode="HTML"
     )
