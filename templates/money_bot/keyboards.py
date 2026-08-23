@@ -1,0 +1,88 @@
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+
+def main_menu_kb():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="💸 Pul ishlash (Referral)")],
+            [KeyboardButton(text="💰 Balansim"), KeyboardButton(text="💳 Pul yechish")],
+            [KeyboardButton(text="🏆 TOP Reyting"), KeyboardButton(text="📊 To'lovlar")],
+            [KeyboardButton(text="ℹ️ Qoidalari")]
+        ],
+        resize_keyboard=True
+    )
+
+def admin_main_kb():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="⚙️ Sozlamalar"), KeyboardButton(text="✅ Majburiy obuna")],
+            [KeyboardButton(text="📢 To'lovlar kanali"), KeyboardButton(text="🖼 Referral rasm")],
+            [KeyboardButton(text="📢 Broadcast"), KeyboardButton(text="💰 Balans qo'shish")],
+            [KeyboardButton(text="📈 Statistika"), KeyboardButton(text="👤 User rejimi")]
+        ],
+        resize_keyboard=True
+    )
+
+def share_ref_link_kb(ref_link: str):
+    share_url = f"https://t.me/share/url?url={ref_link}&text=Botga kirib pul ishlang!"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="↗️ Do'stlarga yuborish", url=share_url)]
+    ])
+
+def settings_kb(ref_bonus: int, min_withdraw: int):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f"Referal bonus: {ref_bonus:,} so'm", callback_data="set_ref_bonus")],
+        [InlineKeyboardButton(text=f"Minimal yechish: {min_withdraw:,} so'm", callback_data="set_min_withdraw")],
+        [InlineKeyboardButton(text="🔙 Yopish", callback_data="close_admin")]
+    ])
+
+def subscription_kb(channels: list):
+    buttons = []
+    for ch in channels:
+        buttons.append([InlineKeyboardButton(text=ch['name'], url=f"https://t.me/{ch['name'].replace('@', '')}")])
+    buttons.append([InlineKeyboardButton(text="✅ Obuna bo'ldim", callback_data="check_sub")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def channels_manage_kb(channels: list):
+    buttons = []
+    for ch in channels:
+        buttons.append([
+            InlineKeyboardButton(text=f"❌ {ch['name']}", callback_data=f"delch:{ch['channel_id']}")
+        ])
+    buttons.append([InlineKeyboardButton(text="➕ Kanal qo'shish", callback_data="add_channel")])
+    buttons.append([InlineKeyboardButton(text="🔙 Yopish", callback_data="close_admin")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def cancel_kb():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_admin")]
+    ])
+
+def payout_approve_kb(user_id: int, amount: int):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ To'landi", callback_data=f"payout_approve:{user_id}:{amount}")],
+        [InlineKeyboardButton(text="❌ Rad etish", callback_data=f"payout_reject:{user_id}:{amount}")]
+    ])
+
+def post_bot_link_kb(bot_username: str):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🤖 Botga o'tish", url=f"https://t.me/{bot_username}")]
+    ])
+
+def captcha_kb(correct_answer: int):
+    import random
+    answers = [correct_answer, correct_answer + random.randint(1, 5), correct_answer - random.randint(1, 5), correct_answer + random.randint(6, 10)]
+    random.shuffle(answers)
+    
+    buttons = []
+    row = []
+    for ans in answers:
+        if ans == correct_answer:
+            row.append(InlineKeyboardButton(text=str(ans), callback_data="captcha:pass"))
+        else:
+            row.append(InlineKeyboardButton(text=str(ans), callback_data="captcha:fail"))
+        
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+            
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

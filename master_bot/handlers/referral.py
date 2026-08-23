@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 
 from database.users import get_referral_count, get_balance
-from master_bot.keyboards import main_menu_kb
+from master_bot.keyboards import main_menu_kb, share_ref_link_kb
 
 REFERRAL_JOIN_BONUS = 1_000
 REFERRAL_BOT_CREATE_BONUS = 5_000
@@ -34,6 +34,6 @@ async def referral_menu(message: Message):
         f"🔗 <b>Sizning havola:</b>\n"
         f"<code>{ref_link}</code>\n\n"
         f"👆 Havolani nusxalab do'stlaringizga yuboring!",
-        reply_markup=main_menu_kb(message.from_user.id),
+        reply_markup=share_ref_link_kb(ref_link),
         parse_mode="HTML"
     )

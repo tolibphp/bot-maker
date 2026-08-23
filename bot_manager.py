@@ -5,6 +5,7 @@ from database.bots import get_all_active_bots, get_bot, update_bot_status
 from templates.base_template import BaseTemplate
 from templates.kino_bot import KinoBot
 from templates.stars_bot import StarsBot
+from templates.money_bot import MoneyBot
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,13 @@ class BotManager:
             )
         elif bot_data["template_type"] == "stars":
             bot_instance = StarsBot(
+                bot_token=bot_data["bot_token"],
+                admin_id=bot_data["owner_telegram_id"],
+                db_path=bot_data["db_path"],
+                bot_id=bot_id
+            )
+        elif bot_data["template_type"] == "money":
+            bot_instance = MoneyBot(
                 bot_token=bot_data["bot_token"],
                 admin_id=bot_data["owner_telegram_id"],
                 db_path=bot_data["db_path"],

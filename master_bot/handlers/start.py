@@ -74,7 +74,8 @@ async def cmd_start(message: Message, state: FSMContext):
         "Bu bot orqali siz o'zingizning Telegram botingizni yaratishingiz mumkin.\n\n"
         "🎬 <b>Mavjud shablonlar:</b>\n"
         "• Kino Bot — 35,000 so'm\n"
-        "• Stars Referral Bot — 35,000 so'm\n\n"
+        "• Stars Referral Bot — 35,000 so'm\n"
+        "• Premium Pul Ishlash — 50,000 so'm\n\n"
         "🎁 Birinchi 30 kun <b>BEPUL!</b>\n"
         "Keyin kuniga 5,000 so'm.",
         reply_markup=main_menu_kb(message.from_user.id),

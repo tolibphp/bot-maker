@@ -159,7 +159,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
         await message.answer(
             f"💸 <b>Pul (Stars) yechish</b>\n\n"
             f"Sizning balans: <b>{user['balance']} ⭐️</b>\n\n"
-            f"Iltimos, yulduzchalarni qabul qilib oluvchi <b>Username</b> yoki <b>Karta raqamingizni</b> yozib yuboring:",
+            f"Iltimos, yulduzchalarni qabul qilib oluvchi profilning <b>@username</b> manzilini yuboring:",
             parse_mode="HTML"
         )
         await state.set_state(UserStates.waiting_withdraw_details)
@@ -182,7 +182,7 @@ def create_user_router(stars_db: StarsDB, admin_id: int) -> Router:
             f"👤 User: {user.full_name}\n"
             f"🆔 ID: <code>{user_id}</code>\n"
             f"💰 Miqdor: <b>{amount} ⭐️</b>\n\n"
-            f"📝 Qabul qiluvchi (Rekvizit): \n<code>{details}</code>\n\n"
+            f"📝 Qabul qiluvchi (Username): \n<code>{details}</code>\n\n"
             f"To'lovni amalga oshirgach 'To'landi' tugmasini bosing."
         )
         try:

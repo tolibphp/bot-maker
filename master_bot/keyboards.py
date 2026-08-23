@@ -31,6 +31,7 @@ def templates_kb():
     buttons = [
         [InlineKeyboardButton(text="🎬 Kino Bot — 35,000 so'm", callback_data="template:kino")],
         [InlineKeyboardButton(text="⭐️ Stars Referral Bot — 35,000 so'm", callback_data="template:stars")],
+        [InlineKeyboardButton(text="💸 Premium Pul Ishlash — 50,000 so'm", callback_data="template:money")],
         [InlineKeyboardButton(text="🔙 Bekor qilish", callback_data="cancel")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -120,3 +121,9 @@ def payment_history_kb(page: int, total_pages: int):
     
     buttons.append([InlineKeyboardButton(text="🔙 Balansga qaytish", callback_data="back_to_balance")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def share_ref_link_kb(ref_link: str):
+    share_url = f"https://t.me/share/url?url={ref_link}&text=Bot yaratish uchun eng zo'r platforma!"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="↗️ Do'stlarga yuborish", url=share_url)]
+    ])

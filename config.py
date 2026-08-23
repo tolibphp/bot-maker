@@ -30,5 +30,9 @@ TEMPLATES = {
     "stars": {
         "name": "⭐️ Stars Referral Bot",
         "price": BOT_CREATE_PRICE
+    },
+    "money": {
+        "name": "💸 Premium Pul Ishlash",
+        "price": 50000
     }
 }
