@@ -131,7 +131,7 @@ async def confirm_create(callback: CallbackQuery, state: FSMContext, bot_manager
     )
     
     free_until = datetime.now() + timedelta(days=FREE_TRIAL_DAYS)
-    bot_db_path = os.path.join(DB_PATH, f"kino_bot_{data['bot_username']}.db")
+    bot_db_path = os.path.join(DB_PATH, f"{data['template_type']}_{data['bot_username']}.db")
     
     bot_id = await add_bot(
         owner_telegram_id=user_id,
