@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
@@ -8,6 +9,9 @@ import yt_dlp
 import html
 
 from master_bot.emojis import HELLO, CHART, PEOPLE, INBOX, HOURGLASS, CROSS, MOVIE, CROWN, MONEY, HORN, CHECK, WRENCH, DOWN, TRASH, SCROLL
+
+# Memory cache for URLs
+URL_CACHE = {}
 
 class DownloaderAdminStates(StatesGroup):
     waiting_channel_id = State()
@@ -43,6 +47,14 @@ def create_router(admin_id: int) -> Router:
             return ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="📢 Reklama")]], resize_keyboard=True)
         return ReplyKeyboardRemove()
 
+    def format_choice_kb(cache_id: str):
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🎥 Video", callback_data=f"dl_vid_{cache_id}"),
+                InlineKeyboardButton(text="🎵 Audio", callback_data=f"dl_aud_{cache_id}")
+            ]
+        ])
+
     # --- SUBSCRIPTION ---
     async def check_subscription(bot: Bot, user_id: int, db) -> bool:
         channels = await db.get_channels()
@@ -58,9 +70,9 @@ def create_router(admin_id: int) -> Router:
         return True
 
     # --- HELPERS ---
-    def extract_video_info(url: str):
+    def extract_video_info(url: str, is_audio=False):
         ydl_opts = {
-            'format': 'best[ext=mp4]/best',
+            'format': 'bestaudio/best' if is_audio else 'best[ext=mp4]/best',
             'quiet': True,
             'no_warnings': True,
             'nocheckcertificate': True
@@ -223,27 +235,71 @@ def create_router(admin_id: int) -> Router:
             return
             
         url = message.text.strip()
-        wait_msg = await message.answer(f"{HOURGLASS} <i>Video yuklanmoqda, kuting...</i>", parse_mode="HTML")
+        
+        cache_id = uuid.uuid4().hex[:10]
+        URL_CACHE[cache_id] = url
+        
+        wait_msg = await message.answer(f"{HOURGLASS} <i>Ma'lumot olinmoqda...</i>", parse_mode="HTML")
         
         try:
-            info = await asyncio.to_thread(extract_video_info, url)
-            video_url = info.get('url')
-            if not video_url:
-                await wait_msg.edit_text(f"{CROSS} Videoni yuklab bo'lmadi. Yopiq profil yoki noto'g'ri havola bo'lishi mumkin.", parse_mode="HTML")
-                return
-                
-            title = info.get('title', 'Video')
-            bot_info = await message.bot.get_me()
-            caption = f"{MOVIE} <b>{title}</b>\n\n{INBOX} @{bot_info.username} orqali yuklandi!"
+            # We first extract basic info to get title and thumbnail
+            info = await asyncio.to_thread(extract_video_info, url, False)
+            title = info.get('title', 'Noma\'lum video')
+            thumbnail = info.get('thumbnail')
             
-            try:
-                await message.answer_video(video=video_url, caption=caption, parse_mode="HTML")
-                await db.add_download(message.from_user.id, url)
-                await wait_msg.delete()
-            except Exception as send_err:
-                await wait_msg.edit_text(f"{INBOX} <b>Video topildi:</b>\n\n<a href='{video_url}'>Videoni yuklash (Direct Link)</a>", parse_mode="HTML")
+            kb = format_choice_kb(cache_id)
+            caption = f"{MOVIE} <b>{html.escape(title)}</b>\n\nQaysi formatda yuklab olmoqchisiz?"
+            
+            await wait_msg.delete()
+            if thumbnail:
+                try:
+                    await message.answer_photo(photo=thumbnail, caption=caption, reply_markup=kb, parse_mode="HTML")
+                except Exception:
+                    await message.answer(caption, reply_markup=kb, parse_mode="HTML")
+            else:
+                await message.answer(caption, reply_markup=kb, parse_mode="HTML")
                 
         except Exception as e:
-            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi. Bu havola qo'llab-quvvatlanmasligi mumkin yoki yopiq sahifa.", parse_mode="HTML")
+            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi. Bu havola yopiq bo'lishi mumkin yoki bot o'qiy olmadi.\n\nIzoh: <i>Telegram storylarni himoya sababli yuklab bo'lmaydi. Instagram post/reels yuklash uchun ochiq profil bo'lishi kerak.</i>", parse_mode="HTML")
+
+    @router.callback_query(F.data.startswith("dl_vid_") | F.data.startswith("dl_aud_"))
+    async def process_download(callback: CallbackQuery, db):
+        action = callback.data[:6] # dl_vid or dl_aud
+        cache_id = callback.data[7:]
+        
+        url = URL_CACHE.get(cache_id)
+        if not url:
+            await callback.answer("Havola muddati tugagan. Qaytadan yuboring.", show_alert=True)
+            return
+            
+        await callback.message.edit_reply_markup(reply_markup=None)
+        wait_msg = await callback.message.reply(f"{HOURGLASS} <i>Fayl yuklanmoqda, kuting...</i>", parse_mode="HTML")
+        
+        is_audio = (action == "dl_aud")
+        
+        try:
+            info = await asyncio.to_thread(extract_video_info, url, is_audio)
+            file_url = info.get('url')
+            if not file_url:
+                await wait_msg.edit_text(f"{CROSS} Faylni yuklab bo'lmadi.", parse_mode="HTML")
+                return
+                
+            title = info.get('title', 'Audio' if is_audio else 'Video')
+            bot_info = await callback.bot.get_me()
+            caption = f"{MOVIE} <b>{html.escape(title)}</b>\n\n{INBOX} @{bot_info.username} orqali yuklandi!"
+            
+            try:
+                if is_audio:
+                    await callback.message.answer_audio(audio=file_url, caption=caption, parse_mode="HTML")
+                else:
+                    await callback.message.answer_video(video=file_url, caption=caption, parse_mode="HTML")
+                
+                await db.add_download(callback.from_user.id, url)
+                await wait_msg.delete()
+            except Exception as send_err:
+                await wait_msg.edit_text(f"{INBOX} <b>Fayl topildi:</b>\n\n<a href='{file_url}'>Bu yerdan yuklab oling (Direct Link)</a>", parse_mode="HTML")
+                
+        except Exception as e:
+            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi. Yopiq profil yoki noto'g'ri havola.", parse_mode="HTML")
 
     return router
