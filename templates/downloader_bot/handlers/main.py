@@ -1,12 +1,12 @@
 import asyncio
 import uuid
+import html
+import yt_dlp
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.filters import CommandStart
-import yt_dlp
-import html
 
 from master_bot.emojis import HELLO, CHART, PEOPLE, INBOX, HOURGLASS, CROSS, MOVIE, CROWN, MONEY, HORN, CHECK, WRENCH, DOWN, TRASH, SCROLL
 
@@ -235,30 +235,46 @@ def create_router(admin_id: int) -> Router:
             return
             
         url = message.text.strip()
-        
-        cache_id = uuid.uuid4().hex[:10]
-        URL_CACHE[cache_id] = url
-        
         wait_msg = await message.answer(f"{HOURGLASS} <i>Ma'lumot olinmoqda...</i>", parse_mode="HTML")
         
         try:
-            # We first extract basic info to get title and thumbnail
             info = await asyncio.to_thread(extract_video_info, url, False)
             title = info.get('title', 'Noma\'lum video')
             thumbnail = info.get('thumbnail')
+            extractor = str(info.get('extractor_key', '')).lower()
             
-            kb = format_choice_kb(cache_id)
-            caption = f"{MOVIE} <b>{html.escape(title)}</b>\n\nQaysi formatda yuklab olmoqchisiz?"
-            
-            await wait_msg.delete()
-            if thumbnail:
-                try:
-                    await message.answer_photo(photo=thumbnail, caption=caption, reply_markup=kb, parse_mode="HTML")
-                except Exception:
+            # If it's YouTube, ask for format choice
+            if 'youtube' in extractor:
+                cache_id = uuid.uuid4().hex[:10]
+                URL_CACHE[cache_id] = url
+                kb = format_choice_kb(cache_id)
+                caption = f"{MOVIE} <b>{html.escape(title)}</b>\n\nQaysi formatda yuklab olmoqchisiz?"
+                
+                await wait_msg.delete()
+                if thumbnail:
+                    try:
+                        await message.answer_photo(photo=thumbnail, caption=caption, reply_markup=kb, parse_mode="HTML")
+                    except Exception:
+                        await message.answer(caption, reply_markup=kb, parse_mode="HTML")
+                else:
                     await message.answer(caption, reply_markup=kb, parse_mode="HTML")
             else:
-                await message.answer(caption, reply_markup=kb, parse_mode="HTML")
+                # For non-YouTube links (Instagram, TikTok, etc), download immediately
+                file_url = info.get('url')
+                if not file_url:
+                    await wait_msg.edit_text(f"{CROSS} Faylni yuklab bo'lmadi.", parse_mode="HTML")
+                    return
                 
+                bot_info = await message.bot.get_me()
+                caption = f"{MOVIE} <b>{html.escape(title)}</b>\n\n{INBOX} @{bot_info.username} orqali yuklandi!"
+                
+                try:
+                    await message.answer_video(video=file_url, caption=caption, parse_mode="HTML")
+                    await db.add_download(message.from_user.id, url)
+                    await wait_msg.delete()
+                except Exception:
+                    await wait_msg.edit_text(f"{INBOX} <b>Fayl topildi:</b>\n\n<a href='{file_url}'>Bu yerdan yuklab oling (Direct Link)</a>", parse_mode="HTML")
+                  
         except Exception as e:
             err_msg = str(e)
             await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>\n\nIzoh: <i>Telegram storylarni himoya sababli yuklab bo'lmaydi. Instagram post/reels yuklash uchun ochiq profil bo'lishi kerak.</i>", parse_mode="HTML")
@@ -301,6 +317,7 @@ def create_router(admin_id: int) -> Router:
                 await wait_msg.edit_text(f"{INBOX} <b>Fayl topildi:</b>\n\n<a href='{file_url}'>Bu yerdan yuklab oling (Direct Link)</a>", parse_mode="HTML")
                 
         except Exception as e:
-            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi. Yopiq profil yoki noto'g'ri havola.", parse_mode="HTML")
+            err_msg = str(e)
+            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>", parse_mode="HTML")
 
     return router
