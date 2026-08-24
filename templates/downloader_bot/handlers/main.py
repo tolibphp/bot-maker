@@ -75,7 +75,8 @@ def create_router(admin_id: int) -> Router:
             'format': 'bestaudio/best' if is_audio else 'b',
             'quiet': True,
             'no_warnings': True,
-            'nocheckcertificate': True
+            'nocheckcertificate': True,
+            'extractor_args': {'youtube': {'player_client': ['android']}}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             return ydl.extract_info(url, download=False)
