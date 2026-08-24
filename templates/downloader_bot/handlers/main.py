@@ -255,7 +255,7 @@ def create_router(admin_id: int) -> Router:
             info = await asyncio.to_thread(extract_video_info, url, False)
             duration = info.get('duration', 0)
             if duration and duration > 600:
-                await wait_msg.edit_text(f"{CROSS} Kechirasiz, bu video hajmi juda katta! \n\n<b>Izoh:</b> Bizning bot asosan qisqa hajmli (Reels / Shorts / TikTok) videolarni yuklashga mo'ljallangan. Iltimos, qisqaroq havola yuboring.", parse_mode="HTML")
+                await wait_msg.edit_text(f"{CROSS} <b>Kechirasiz, bu video juda uzun!</b>\n\nIltimos, qisqaroq (Reels/Shorts) video havolasini yuboring.", parse_mode="HTML")
                 return
 
             title = info.get('title', 'Noma\'lum video')
@@ -295,8 +295,7 @@ def create_router(admin_id: int) -> Router:
                     await wait_msg.edit_text(f"{INBOX} <b>Fayl topildi:</b>\n\n<a href='{file_url}'>Bu yerdan yuklab oling (Direct Link)</a>", parse_mode="HTML")
                   
         except Exception as e:
-            err_msg = str(e)
-            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>\n\nIzoh: <i>Telegram storylarni himoya sababli yuklab bo'lmaydi. Instagram post/reels yuklash uchun ochiq profil bo'lishi kerak.</i>", parse_mode="HTML")
+            await wait_msg.edit_text(f"{CROSS} <b>Videoni yuklab bo'lmadi!</b>\n\nBuning sababi video yopiq profildan bo'lishi yoki havola noto'g'ri bo'lishi mumkin.", parse_mode="HTML")
 
     def download_youtube_local(url: str, is_audio: bool, cache_id: str):
         import os
@@ -342,13 +341,13 @@ def create_router(admin_id: int) -> Router:
                 await db.add_download(callback.from_user.id, url)
                 await wait_msg.delete()
             except Exception as send_err:
-                await wait_msg.edit_text(f"{CROSS} Faylni Telegramga yuklashda xatolik yuz berdi. Telegram maksimal 50MB ruxsat beradi.\nSabab: <code>{html.escape(str(send_err))}</code>", parse_mode="HTML")
+                await wait_msg.edit_text(f"{CROSS} <b>Faylni yuklab bo'lmadi!</b>\n\nBunga fayl hajmining juda kattaligi sabab bo'lishi mumkin.", parse_mode="HTML")
         except Exception as e:
             err_msg = str(e)
             if "max-filesize" in err_msg.lower():
-                await wait_msg.edit_text(f"{CROSS} Video hajmi juda katta (Telegram 50MB gacha ruxsat beradi). Qisqaroq video tanlang.", parse_mode="HTML")
+                await wait_msg.edit_text(f"{CROSS} <b>Kechirasiz, bu video juda katta!</b>\n\nIltimos, qisqaroq (Reels/Shorts) video tanlang.", parse_mode="HTML")
             else:
-                await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>", parse_mode="HTML")
+                await wait_msg.edit_text(f"{CROSS} <b>Kechirasiz, videoni yuklab bo'lmadi!</b>\n\nBuning sababi video yopiq profildan bo'lishi yoki o'chirib tashlangan bo'lishi mumkin.", parse_mode="HTML")
         finally:
             import os
             if filename and os.path.exists(filename):
