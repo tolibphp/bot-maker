@@ -72,7 +72,7 @@ def create_router(admin_id: int) -> Router:
     # --- HELPERS ---
     def extract_video_info(url: str, is_audio=False):
         ydl_opts = {
-            'format': 'bestaudio/best' if is_audio else 'best[ext=mp4]/best',
+            'format': 'bestaudio/best' if is_audio else 'b',
             'quiet': True,
             'no_warnings': True,
             'nocheckcertificate': True
