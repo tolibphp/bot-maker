@@ -253,6 +253,11 @@ def create_router(admin_id: int) -> Router:
         
         try:
             info = await asyncio.to_thread(extract_video_info, url, False)
+            duration = info.get('duration', 0)
+            if duration and duration > 600:
+                await wait_msg.edit_text(f"{CROSS} Kechirasiz, bu video hajmi juda katta! \n\n<b>Izoh:</b> Bizning bot asosan qisqa hajmli (Reels / Shorts / TikTok) videolarni yuklashga mo'ljallangan. Iltimos, qisqaroq havola yuboring.", parse_mode="HTML")
+                return
+
             title = info.get('title', 'Noma\'lum video')
             thumbnail = info.get('thumbnail')
             extractor = str(info.get('extractor_key', '')).lower()
@@ -293,45 +298,63 @@ def create_router(admin_id: int) -> Router:
             err_msg = str(e)
             await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>\n\nIzoh: <i>Telegram storylarni himoya sababli yuklab bo'lmaydi. Instagram post/reels yuklash uchun ochiq profil bo'lishi kerak.</i>", parse_mode="HTML")
 
+    def download_youtube_local(url: str, is_audio: bool, cache_id: str):
+        import os
+        if not os.path.exists('downloads'):
+            os.makedirs('downloads')
+        out_tmpl = f'downloads/{cache_id}.%(ext)s'
+        ydl_opts = {
+            'format': 'bestaudio/best' if is_audio else 'b',
+            'outtmpl': out_tmpl,
+            'quiet': True,
+            'no_warnings': True,
+            'nocheckcertificate': True,
+            'extractor_args': {'youtube': {'player_client': ['android']}},
+            'max_filesize': 49 * 1024 * 1024
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            return ydl.prepare_filename(info), info.get('title', 'Audio' if is_audio else 'Video')
+
     @router.callback_query(F.data.startswith("dl_vid_") | F.data.startswith("dl_aud_"))
     async def process_download(callback: CallbackQuery, db):
-        action = callback.data[:6] # dl_vid or dl_aud
+        action = callback.data[:6]
         cache_id = callback.data[7:]
-        
         url = URL_CACHE.get(cache_id)
         if not url:
             await callback.answer("Havola muddati tugagan. Qaytadan yuboring.", show_alert=True)
             return
-            
         await callback.message.edit_reply_markup(reply_markup=None)
         wait_msg = await callback.message.reply(f"{HOURGLASS} <i>Fayl yuklanmoqda, kuting...</i>", parse_mode="HTML")
-        
         is_audio = (action == "dl_aud")
-        
+        filename = None
         try:
-            info = await asyncio.to_thread(extract_video_info, url, is_audio)
-            file_url = info.get('url')
-            if not file_url:
-                await wait_msg.edit_text(f"{CROSS} Faylni yuklab bo'lmadi.", parse_mode="HTML")
-                return
-                
-            title = info.get('title', 'Audio' if is_audio else 'Video')
+            filename, title = await asyncio.to_thread(download_youtube_local, url, is_audio, cache_id)
             bot_info = await callback.bot.get_me()
             caption = f"{MOVIE} <b>{html.escape(title)}</b>\n\n{INBOX} @{bot_info.username} orqali yuklandi!"
-            
             try:
+                from aiogram.types import FSInputFile
+                media_file = FSInputFile(filename)
                 if is_audio:
-                    await callback.message.answer_audio(audio=file_url, caption=caption, parse_mode="HTML")
+                    await callback.message.answer_audio(audio=media_file, caption=caption, parse_mode="HTML")
                 else:
-                    await callback.message.answer_video(video=file_url, caption=caption, parse_mode="HTML")
-                
+                    await callback.message.answer_video(video=media_file, caption=caption, parse_mode="HTML")
                 await db.add_download(callback.from_user.id, url)
                 await wait_msg.delete()
             except Exception as send_err:
-                await wait_msg.edit_text(f"{INBOX} <b>Fayl topildi:</b>\n\n<a href='{file_url}'>Bu yerdan yuklab oling (Direct Link)</a>", parse_mode="HTML")
-                
+                await wait_msg.edit_text(f"{CROSS} Faylni Telegramga yuklashda xatolik yuz berdi. Telegram maksimal 50MB ruxsat beradi.\nSabab: <code>{html.escape(str(send_err))}</code>", parse_mode="HTML")
         except Exception as e:
             err_msg = str(e)
-            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>", parse_mode="HTML")
+            if "max-filesize" in err_msg.lower():
+                await wait_msg.edit_text(f"{CROSS} Video hajmi juda katta (Telegram 50MB gacha ruxsat beradi). Qisqaroq video tanlang.", parse_mode="HTML")
+            else:
+                await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>", parse_mode="HTML")
+        finally:
+            import os
+            if filename and os.path.exists(filename):
+                try:
+                    os.remove(filename)
+                except:
+                    pass
 
     return router
