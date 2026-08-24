@@ -260,7 +260,8 @@ def create_router(admin_id: int) -> Router:
                 await message.answer(caption, reply_markup=kb, parse_mode="HTML")
                 
         except Exception as e:
-            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi. Bu havola yopiq bo'lishi mumkin yoki bot o'qiy olmadi.\n\nIzoh: <i>Telegram storylarni himoya sababli yuklab bo'lmaydi. Instagram post/reels yuklash uchun ochiq profil bo'lishi kerak.</i>", parse_mode="HTML")
+            err_msg = str(e)
+            await wait_msg.edit_text(f"{CROSS} Xatolik yuz berdi.\n\nSabab: <code>{html.escape(err_msg)}</code>\n\nIzoh: <i>Telegram storylarni himoya sababli yuklab bo'lmaydi. Instagram post/reels yuklash uchun ochiq profil bo'lishi kerak.</i>", parse_mode="HTML")
 
     @router.callback_query(F.data.startswith("dl_vid_") | F.data.startswith("dl_aud_"))
     async def process_download(callback: CallbackQuery, db):
