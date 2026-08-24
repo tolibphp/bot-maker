@@ -71,6 +71,19 @@ def create_router(admin_id: int) -> Router:
 
     # --- HELPERS ---
     def extract_video_info(url: str, is_audio=False):
+        if 'tiktok.com' in url:
+            import requests
+            resp = requests.post('https://www.tikwm.com/api/', data={'url': url})
+            if resp.status_code == 200:
+                data = resp.json().get('data', {})
+                return {
+                    'title': data.get('title', 'TikTok Video'),
+                    'url': data.get('play'),
+                    'thumbnail': data.get('cover'),
+                    'extractor_key': 'tiktok'
+                }
+            raise Exception("TikTok videosini yuklab bo'lmadi (API xatosi).")
+            
         ydl_opts = {
             'format': 'bestaudio/best' if is_audio else 'b',
             'quiet': True,
