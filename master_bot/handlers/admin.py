@@ -46,7 +46,7 @@ async def show_users_stats(message: Message):
     count = await get_users_count()
     await message.answer(f"{PEOPLE} Botdagi jami foydalanuvchilar soni: <b>{count}</b> ta", parse_mode="HTML")
 
-@router.message(F.entities)
+@router.message(lambda msg: msg.entities and any(e.type == "custom_emoji" for e in msg.entities))
 async def catch_premium_emoji(message: Message):
     if message.from_user.id != int(ADMIN_ID):
         return
