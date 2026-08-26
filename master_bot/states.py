@@ -17,6 +17,14 @@ class AdminAddBalanceStates(StatesGroup):
     waiting_amount = State()
 
 
+class BroadcastStates(StatesGroup):
+    waiting_for_message = State()
+
+
+class AddChannelStates(StatesGroup):
+    waiting_channel = State()
+
+
 class AdminBroadcastStates(StatesGroup):
     waiting_message = State()
 

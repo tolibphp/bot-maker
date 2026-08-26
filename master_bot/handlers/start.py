@@ -15,6 +15,11 @@ REFERRAL_JOIN_BONUS = 1_000
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
+    from master_bot.handlers.subscription import check_subscription, send_subscription_message
+    if not await check_subscription(message.bot, message.from_user.id):
+        await send_subscription_message(message)
+        return
+
     user_id = message.from_user.id
     text = message.text or ""
 

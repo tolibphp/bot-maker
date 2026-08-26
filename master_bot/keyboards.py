@@ -24,7 +24,8 @@ def main_menu_kb(user_id: int = None):
 
 def admin_panel_kb():
     buttons = [
-        [KeyboardButton(text="Statistika", icon_custom_emoji_id=CHART_ID)],
+        [KeyboardButton(text="Statistika", icon_custom_emoji_id=CHART_ID),
+         KeyboardButton(text="✅ Majburiy obuna")],
         [KeyboardButton(text="Foydalanuvchilar", icon_custom_emoji_id=PEOPLE_ID), 
          KeyboardButton(text="Balans qo'shish", icon_custom_emoji_id=MONEY_ID)],
         [KeyboardButton(text="Broadcast", icon_custom_emoji_id=HORN_ID), 
@@ -134,3 +135,32 @@ def share_ref_link_kb(ref_link: str):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=" Do'stlarga yuborish", url=share_url, icon_custom_emoji_id=UPRIGHT_ID)]
     ])
+
+def subscription_kb(channels: list):
+    buttons = []
+    for ch in channels:
+        channel_id = ch["channel_id"]
+        name = ch["channel_name"] or channel_id
+        if channel_id.startswith("@"):
+            url = f"https://t.me/{channel_id[1:]}"
+        else:
+            url = f"https://t.me/{channel_id}"
+        buttons.append([
+            InlineKeyboardButton(text=f"📢 {name}", url=url)
+        ])
+    buttons.append([
+        InlineKeyboardButton(text="✅ Tekshirish", callback_data="check_sub")
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def channels_manage_kb(channels: list):
+    buttons = []
+    for ch in channels:
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"🗑 {ch['channel_name'] or ch['channel_id']}",
+                callback_data=f"delch:{ch['id']}"
+            )
+        ])
+    buttons.append([InlineKeyboardButton(text="➕ Kanal qo'shish", callback_data="add_channel")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)

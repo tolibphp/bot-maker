@@ -14,6 +14,11 @@ router = Router()
 
 @router.message(F.text.in_({"💰 Balansim", "Balansim"}))
 async def show_balance(message: Message):
+    from master_bot.handlers.subscription import check_subscription, send_subscription_message
+    if not await check_subscription(message.bot, message.from_user.id):
+        await send_subscription_message(message)
+        return
+
     balance = await get_balance(message.from_user.id)
 
     text = (

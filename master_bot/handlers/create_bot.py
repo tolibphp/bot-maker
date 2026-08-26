@@ -20,6 +20,11 @@ async def create_bot_start(message: Message, state: FSMContext):
     if message.chat.type != "private":
         return
         
+    from master_bot.handlers.subscription import check_subscription, send_subscription_message
+    if not await check_subscription(message.bot, message.from_user.id):
+        await send_subscription_message(message)
+        return
+
     await message.answer(
         f"{BOT} <b>Qanday bot yaratmoqchisiz?</b>\n\n"
         f"Kerakli shablonni tanlang:",

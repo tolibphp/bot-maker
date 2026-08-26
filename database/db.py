@@ -50,6 +50,12 @@ async def init_master_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_telegram_id) REFERENCES users(telegram_id)
             );
+
+            CREATE TABLE IF NOT EXISTS channels (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                channel_id TEXT UNIQUE NOT NULL,
+                channel_name TEXT
+            );
         """)
         await db.commit()
 

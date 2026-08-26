@@ -10,6 +10,11 @@ router = Router()
 
 @router.message(F.text.in_({"📋 Mening botlarim", "Mening botlarim"}))
 async def my_bots_menu(message: Message):
+    from master_bot.handlers.subscription import check_subscription, send_subscription_message
+    if not await check_subscription(message.bot, message.from_user.id):
+        await send_subscription_message(message)
+        return
+
     bots = await get_user_bots(message.from_user.id)
     if not bots:
         await message.answer(f"{LIST} Sizda hali botlar yo'q.", parse_mode="HTML")
