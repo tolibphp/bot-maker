@@ -6,7 +6,7 @@ from database.users import get_users_count, get_all_users
 from database.bots import get_all_bots
 from database.payments import add_payment
 from master_bot.keyboards import admin_panel_kb, back_kb
-from master_bot.states import AdminAddBalanceStates, AdminBroadcastStates
+from master_bot.states import AdminAddBalanceStates, AdminBroadcastStates, AddChannelStates
 from master_bot.emojis import CROWN, CHART, PEOPLE, HORN, WRENCH, MONEY, CROSS, CHECK, DOWN
 
 router = Router()
