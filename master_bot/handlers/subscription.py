@@ -21,7 +21,8 @@ async def check_subscription(bot: Bot, user_id: int) -> bool:
             if member.status in ["left", "kicked"]:
                 return False
         except Exception:
-            continue
+            # If bot cannot check membership (e.g., not admin, invalid channel), assume not subscribed.
+            return False
     return True
 
 async def send_subscription_message(message: Message):
