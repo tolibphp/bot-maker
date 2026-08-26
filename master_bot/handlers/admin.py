@@ -241,7 +241,7 @@ async def reject_payment(callback: CallbackQuery):
 # ==========================================
 @router.message(F.text == "✅ Majburiy obuna")
 async def manage_sub_channels(message: Message):
-    if not is_admin(message.from_user.id):
+    if message.from_user.id != ADMIN_ID:
         return
         
     from database.channels import get_channels
@@ -270,6 +270,8 @@ async def manage_sub_channels(message: Message):
 
 @router.callback_query(F.data == "add_channel")
 async def add_channel_start(callback: CallbackQuery, state: FSMContext):
+    if callback.from_user.id != ADMIN_ID:
+        return
     from master_bot.states import AddChannelStates
     await callback.message.edit_text(
         "✅ <b>Majburiy obuna kanal qo'shish</b>\n\n"
@@ -282,7 +284,7 @@ async def add_channel_start(callback: CallbackQuery, state: FSMContext):
 
 @router.message(AddChannelStates.waiting_channel)
 async def add_channel_save(message: Message, state: FSMContext):
-    if not is_admin(message.from_user.id):
+    if message.from_user.id != ADMIN_ID:
         return
         
     from database.channels import add_channel
@@ -305,6 +307,8 @@ async def add_channel_save(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.startswith("delch:"))
 async def delete_sub_channel(callback: CallbackQuery):
+    if callback.from_user.id != ADMIN_ID:
+        return
     from database.channels import delete_channel, get_channels
     from master_bot.keyboards import channels_manage_kb
     
