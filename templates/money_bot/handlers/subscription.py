@@ -25,8 +25,7 @@ async def check_subscription(bot: Bot, user_id: int, money_db: MoneyDB) -> bool:
 async def send_subscription_message(message: Message, money_db: MoneyDB):
     channels = await money_db.get_channels()
     await message.answer(
-        "❌ <b>Kanallarimizga obuna bo'ling!</b>\n\n"
-        "Botdan foydalanish uchun quyidagi kanallarimizga obuna bo'lishingiz kerak:",
+        "📢 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
         reply_markup=subscription_kb(channels),
         parse_mode="HTML"
     )
@@ -34,8 +33,7 @@ async def send_subscription_message(message: Message, money_db: MoneyDB):
 async def send_subscription_callback(callback: CallbackQuery, money_db: MoneyDB):
     channels = await money_db.get_channels()
     await callback.message.answer(
-        "❌ <b>Kanallarimizga obuna bo'ling!</b>\n\n"
-        "Botdan foydalanish uchun quyidagi kanallarimizga obuna bo'lishingiz kerak:",
+        "📢 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
         reply_markup=subscription_kb(channels),
         parse_mode="HTML"
     )

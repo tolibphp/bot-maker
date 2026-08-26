@@ -215,7 +215,7 @@ def create_router(admin_id: int) -> Router:
         await db.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
         if not await check_subscription(message.bot, message.from_user.id, db):
             channels = await db.get_channels()
-            await message.answer("Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:", reply_markup=subscription_kb(channels))
+            await message.answer("📢 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:", reply_markup=subscription_kb(channels))
             return
             
         kb = await user_main_kb(db)
@@ -245,7 +245,7 @@ def create_router(admin_id: int) -> Router:
     async def handle_url(message: Message, db):
         if not await check_subscription(message.bot, message.from_user.id, db):
             channels = await db.get_channels()
-            await message.answer("Kechirasiz, kanallarga obuna bo'lmasangiz bot ishlamaydi:", reply_markup=subscription_kb(channels))
+            await message.answer("📢 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:", reply_markup=subscription_kb(channels))
             return
             
         url = message.text.strip()

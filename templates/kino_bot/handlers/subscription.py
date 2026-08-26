@@ -28,8 +28,7 @@ async def send_subscription_message(message: Message, kino_db: KinoDB):
     """Send message asking user to subscribe to channels."""
     channels = await kino_db.get_channels()
     await message.answer(
-        "❌ <b>Kanallarimizga obuna bo'ling!</b>\n\n"
-        "Botdan foydalanish uchun quyidagi kanallarimizga obuna bo'lishingiz kerak:",
+        "📢 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
         reply_markup=subscription_kb(channels),
         parse_mode="HTML"
     )

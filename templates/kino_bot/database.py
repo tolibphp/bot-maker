@@ -54,6 +54,11 @@ class KinoDB:
                     channel_id TEXT UNIQUE NOT NULL,
                     channel_name TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT UNIQUE NOT NULL,
+                    value TEXT
+                );
             """)
             await db.commit()
         finally:
@@ -338,6 +343,27 @@ class KinoDB:
         db = await self._get_db()
         try:
             await db.execute("DELETE FROM bot_channels WHERE id = ?", (channel_id,))
+            await db.commit()
+        finally:
+            await db.close()
+
+    # ---- Settings ----
+    async def get_setting(self, key: str) -> str:
+        db = await self._get_db()
+        try:
+            cursor = await db.execute("SELECT value FROM settings WHERE key = ?", (key,))
+            row = await cursor.fetchone()
+            return row["value"] if row else None
+        finally:
+            await db.close()
+
+    async def set_setting(self, key: str, value: str):
+        db = await self._get_db()
+        try:
+            await db.execute(
+                "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                (key, value)
+            )
             await db.commit()
         finally:
             await db.close()

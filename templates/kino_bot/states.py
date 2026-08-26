@@ -28,3 +28,11 @@ class DeleteMovieStates(StatesGroup):
 
 class SearchStates(StatesGroup):
     waiting_query = State()
+
+
+class CreatePostStates(StatesGroup):
+    waiting_code = State()
+
+
+class SettingsStates(StatesGroup):
+    waiting_instagram_link = State()

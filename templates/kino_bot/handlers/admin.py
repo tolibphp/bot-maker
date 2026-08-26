@@ -11,7 +11,7 @@ from templates.kino_bot.keyboards import (
 )
 from templates.kino_bot.states import (
     AddMovieStates, AddChannelStates, AddBotChannelStates,
-    BroadcastStates, BanUserStates
+    BroadcastStates, BanUserStates, CreatePostStates, SettingsStates
 )
 
 logger = logging.getLogger(__name__)
@@ -80,41 +80,6 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
             reply_markup=admin_main_kb(),
             parse_mode="HTML"
         )
-
-        # --- Bot kanallariga avto-post ---
-        bot_channels = await kino_db.get_bot_channels()
-        if bot_channels:
-            bot_me = await message.bot.get_me()
-            post_caption = (
-                f"🎬 <b>{data['movie_name']}</b>\n\n"
-                f"🔑 Kod: <code>#{code}</code>\n\n"
-                f"👇 <b>Ko'rish uchun tugmani bosing</b>"
-            )
-            post_kb = channel_post_kb(bot_me.username)
-
-            for ch in bot_channels:
-                try:
-                    if message.video:
-                        await message.bot.send_video(
-                            chat_id=ch["channel_id"],
-                            video=file_id,
-                            caption=post_caption,
-                            reply_markup=post_kb,
-                            parse_mode="HTML"
-                        )
-                    else:
-                        await message.bot.send_document(
-                            chat_id=ch["channel_id"],
-                            document=file_id,
-                            caption=post_caption,
-                            reply_markup=post_kb,
-                            parse_mode="HTML"
-                        )
-                except Exception as e:
-                    await message.answer(
-                        f"⚠️ Kanalga post qilib bo'lmadi: {e}",
-                        parse_mode="HTML"
-                    )
 
         await state.clear()
 
@@ -270,7 +235,7 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
     #  📢 BOT KANALI (Kanalimiz tugmasi + avto-post)
     # ==========================================
 
-    @router.message(F.text == "📢 Bot kanali")
+    @router.message(F.text == "📢 Post kanali")
     async def manage_bot_channels(message: Message):
         if not is_admin(message):
             return
@@ -481,5 +446,126 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
     @router.callback_query(F.data == "noop")
     async def noop(callback: CallbackQuery):
         await callback.answer()
+
+    # ==========================================
+    #  ⚙️ SOZLAMALAR (Instagram havolasi)
+    # ==========================================
+    @router.message(F.text == "⚙️ Sozlamalar")
+    async def settings_start(message: Message, state: FSMContext):
+        if not is_admin(message):
+            return
+        current_link = await kino_db.get_setting("instagram_link")
+        link_text = current_link if current_link else "Kiritilmagan"
+        
+        await message.answer(
+            f"⚙️ <b>Sozlamalar</b>\n\n"
+            f"📸 <b>Joriy Instagram havola:</b>\n{link_text}\n\n"
+            f"Yangi Instagram havolasini yuboring (yoki bekor qilish uchun ❌ bosing):",
+            reply_markup=cancel_admin_kb(),
+            parse_mode="HTML"
+        )
+        await state.set_state(SettingsStates.waiting_instagram_link)
+
+    @router.message(SettingsStates.waiting_instagram_link)
+    async def settings_save_ig(message: Message, state: FSMContext):
+        if not is_admin(message):
+            return
+        new_link = message.text.strip()
+        await kino_db.set_setting("instagram_link", new_link)
+        await message.answer(
+            f"✅ <b>Instagram havola saqlandi!</b>\n\n{new_link}",
+            reply_markup=admin_main_kb(),
+            parse_mode="HTML"
+        )
+        await state.clear()
+
+    # ==========================================
+    #  📝 POST YARATISH
+    # ==========================================
+    @router.message(F.text == "📝 Post yaratish")
+    async def create_post_start(message: Message, state: FSMContext):
+        if not is_admin(message):
+            return
+        bot_channels = await kino_db.get_bot_channels()
+        if not bot_channels:
+            await message.answer(
+                "⚠️ Post yaratish uchun avval <b>📢 Bot kanali</b> bo'limidan kanal qo'shing!",
+                parse_mode="HTML"
+            )
+            return
+            
+        await message.answer(
+            "📝 <b>Post yaratish</b>\n\n"
+            "Qaysi kinoni kanalga post qilmoqchisiz?\n"
+            "Kino kodini yuboring (Masalan: 001):",
+            reply_markup=cancel_admin_kb(),
+            parse_mode="HTML"
+        )
+        await state.set_state(CreatePostStates.waiting_code)
+
+    @router.message(CreatePostStates.waiting_code)
+    async def create_post_send(message: Message, state: FSMContext):
+        if not is_admin(message):
+            return
+        
+        code = message.text.strip()
+        movie = await kino_db.get_movie_by_code(code)
+        if not movie:
+            await message.answer("❌ Bunday kodli kino topilmadi. Qaytadan urinib ko'ring:")
+            return
+            
+        bot_channels = await kino_db.get_bot_channels()
+        ig_link = await kino_db.get_setting("instagram_link") or "Kiritilmagan"
+        bot_me = await message.bot.get_me()
+        bot_username = bot_me.username
+        
+        post_caption = (
+            f"👆 Ushbu kinoni to'liq holatda kino botimizga joyladik\n\n"
+            f"🔎 Kino kodi:  {movie['code']} \n\n"
+            f"🤖 Botimiz: @{bot_username}  👈\n\n"
+            f"📸 Bizning <a href='{ig_link}'>Instagram sahifamiz</a>\n\n"
+            f"📥 To'liq filmni tomosha qilish uchun pastdagi \"📥 Kinoni ko'rish\" tugmasini bosing."
+        )
+        
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        post_kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📥 Kinoni ko'rish", url=f"https://t.me/{bot_username}?start={movie['code']}")]
+        ])
+        
+        sent = 0
+        failed = 0
+        
+        for ch in bot_channels:
+            try:
+                # Try to send as video first, if it fails maybe it's a document
+                try:
+                    await message.bot.send_video(
+                        chat_id=ch["channel_id"],
+                        video=movie["file_id"],
+                        caption=post_caption,
+                        reply_markup=post_kb,
+                        parse_mode="HTML"
+                    )
+                except Exception:
+                    await message.bot.send_document(
+                        chat_id=ch["channel_id"],
+                        document=movie["file_id"],
+                        caption=post_caption,
+                        reply_markup=post_kb,
+                        parse_mode="HTML"
+                    )
+                sent += 1
+            except Exception as e:
+                failed += 1
+                logger.error(f"Post failed for {ch['channel_id']}: {e}")
+                
+        await message.answer(
+            f"✅ <b>Post yaratildi va kanallarga yuborildi!</b>\n\n"
+            f"📤 Yuborildi: {sent} ta kanal\n"
+            f"❌ Xatolik: {failed} ta kanal",
+            reply_markup=admin_main_kb(),
+            parse_mode="HTML"
+        )
+        await state.clear()
 
     return router

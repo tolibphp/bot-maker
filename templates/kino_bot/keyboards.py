@@ -9,15 +9,16 @@ from aiogram.types import (
 def user_kb():
     """User keyboard — qidiruv va kanal."""
     buttons = [
-        [KeyboardButton(text="🔍 Kino qidirish"), KeyboardButton(text="📢 Kanalimiz")],
+        [KeyboardButton(text="🔍 Kino qidirish")],
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
 def admin_main_kb():
     buttons = [
-        [KeyboardButton(text="➕ Kino qo'shish"), KeyboardButton(text="📋 Kinolar ro'yxati")],
-        [KeyboardButton(text="✅ Majburiy obuna"), KeyboardButton(text="📢 Bot kanali")],
+        [KeyboardButton(text="➕ Kino qo'shish"), KeyboardButton(text="📝 Post yaratish")],
+        [KeyboardButton(text="📋 Kinolar ro'yxati"), KeyboardButton(text="⚙️ Sozlamalar")],
+        [KeyboardButton(text="✅ Majburiy obuna"), KeyboardButton(text="📢 Post kanali")],
         [KeyboardButton(text="📢 Broadcast"), KeyboardButton(text="📊 Statistika")],
         [KeyboardButton(text="🚫 Ban / Unban"), KeyboardButton(text="👤 User rejimi")],
     ]

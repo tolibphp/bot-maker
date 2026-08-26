@@ -156,36 +156,6 @@ def create_user_router(kino_db: KinoDB, admin_id: int) -> Router:
             parse_mode="HTML"
         )
 
-    # --- 📢 Kanalimiz button ---
-    @router.message(F.text == "📢 Kanalimiz")
-    async def show_channel(message: Message):
-        if await kino_db.is_banned(message.from_user.id):
-            return
-
-        channels = await kino_db.get_bot_channels()
-        if not channels:
-            await message.answer("📢 Hali kanal qo'shilmagan.")
-            return
-
-        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-        buttons = []
-        for ch in channels:
-            channel_id = ch["channel_id"]
-            name = ch["channel_name"] or channel_id
-            if channel_id.startswith("@"):
-                url = f"https://t.me/{channel_id[1:]}"
-            else:
-                url = f"https://t.me/{channel_id}"
-            buttons.append([
-                InlineKeyboardButton(text=f"📢 {name}", url=url)
-            ])
-
-        await message.answer(
-            "📢 <b>Bizning kanallarimiz:</b>\n\n"
-            "Obuna bo'ling va yangi kinolardan xabardor bo'ling! 👇",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
-            parse_mode="HTML"
-        )
 
     # --- Handle ANY text as movie code ---
     @router.message(F.text)
@@ -194,9 +164,10 @@ def create_user_router(kino_db: KinoDB, admin_id: int) -> Router:
         if message.from_user.id == admin_id:
             admin_commands = [
                 "➕ Kino qo'shish", "📋 Kinolar ro'yxati",
-                "✅ Majburiy obuna", "📢 Bot kanali",
+                "✅ Majburiy obuna", "📢 Post kanali",
                 "📢 Broadcast", "📊 Statistika",
-                "🚫 Ban / Unban", "👤 User rejimi"
+                "🚫 Ban / Unban", "👤 User rejimi",
+                "📝 Post yaratish", "⚙️ Sozlamalar"
             ]
             if message.text in admin_commands:
                 return

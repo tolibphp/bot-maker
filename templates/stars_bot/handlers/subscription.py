@@ -25,8 +25,7 @@ async def check_subscription(bot: Bot, user_id: int, stars_db: StarsDB) -> bool:
 async def send_subscription_message(message: Message, stars_db: StarsDB):
     channels = await stars_db.get_channels()
     await message.answer(
-        "❌ <b>Kanallarimizga obuna bo'ling!</b>\n\n"
-        "Botdan foydalanish uchun quyidagi kanallarimizga obuna bo'lishingiz kerak:",
+        "📢 Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:",
         reply_markup=subscription_kb(channels),
         parse_mode="HTML"
     )
