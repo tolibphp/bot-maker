@@ -236,89 +236,89 @@ async def reject_payment(callback: CallbackQuery):
     except:
         pass
 
-    # ==========================================
-    #  ✅ MAJBURIY OBUNA (Kanal qo'shish/o'chirish)
-    # ==========================================
-    @router.message(F.text == "✅ Majburiy obuna")
-    async def manage_sub_channels(message: Message):
-        if not is_admin(message.from_user.id):
-            return
-            
-        from database.channels import get_channels
-        from master_bot.keyboards import channels_manage_kb
+# ==========================================
+#  ✅ MAJBURIY OBUNA (Kanal qo'shish/o'chirish)
+# ==========================================
+@router.message(F.text == "✅ Majburiy obuna")
+async def manage_sub_channels(message: Message):
+    if not is_admin(message.from_user.id):
+        return
         
-        channels = await get_channels()
+    from database.channels import get_channels
+    from master_bot.keyboards import channels_manage_kb
+    
+    channels = await get_channels()
 
-        text = (
-            "✅ <b>Majburiy obuna (Master Bot)</b>\n\n"
-            "Bu kanallar foydalanuvchi Master botdan foydalanish uchun\n"
-            "<b>obuna bo'lishi shart</b> bo'lgan kanallar.\n\n"
-        )
-        if channels:
-            text += "<b>Qo'shilgan kanallar:</b>\n"
-            for ch in channels:
-                text += f"✅ {ch['channel_name'] or ch['channel_id']}\n"
-            text += "\nO'chirish uchun bosing 👇"
-        else:
-            text += "⚠️ Majburiy obuna yo'q.\nUser tekshiruvsiz foydalanadi."
+    text = (
+        "✅ <b>Majburiy obuna (Master Bot)</b>\n\n"
+        "Bu kanallar foydalanuvchi Master botdan foydalanish uchun\n"
+        "<b>obuna bo'lishi shart</b> bo'lgan kanallar.\n\n"
+    )
+    if channels:
+        text += "<b>Qo'shilgan kanallar:</b>\n"
+        for ch in channels:
+            text += f"✅ {ch['channel_name'] or ch['channel_id']}\n"
+        text += "\nO'chirish uchun bosing 👇"
+    else:
+        text += "⚠️ Majburiy obuna yo'q.\nUser tekshiruvsiz foydalanadi."
 
-        await message.answer(
-            text,
-            reply_markup=channels_manage_kb(channels),
-            parse_mode="HTML"
-        )
+    await message.answer(
+        text,
+        reply_markup=channels_manage_kb(channels),
+        parse_mode="HTML"
+    )
 
-    @router.callback_query(F.data == "add_channel")
-    async def add_channel_start(callback: CallbackQuery, state: FSMContext):
-        from master_bot.states import AddChannelStates
-        await callback.message.edit_text(
-            "✅ <b>Majburiy obuna kanal qo'shish</b>\n\n"
-            "Kanal username ni kiriting:\n"
-            "Misol: <code>@mychannel</code>\n\n"
-            "⚠️ Bot kanalda admin bo'lishi kerak!",
-            parse_mode="HTML"
-        )
-        await state.set_state(AddChannelStates.waiting_channel)
+@router.callback_query(F.data == "add_channel")
+async def add_channel_start(callback: CallbackQuery, state: FSMContext):
+    from master_bot.states import AddChannelStates
+    await callback.message.edit_text(
+        "✅ <b>Majburiy obuna kanal qo'shish</b>\n\n"
+        "Kanal username ni kiriting:\n"
+        "Misol: <code>@mychannel</code>\n\n"
+        "⚠️ Bot kanalda admin bo'lishi kerak!",
+        parse_mode="HTML"
+    )
+    await state.set_state(AddChannelStates.waiting_channel)
 
-    @router.message(AddChannelStates.waiting_channel)
-    async def add_channel_save(message: Message, state: FSMContext):
-        if not is_admin(message.from_user.id):
-            return
-            
-        from database.channels import add_channel
-        channel_id = message.text.strip()
-        try:
-            chat = await message.bot.get_chat(channel_id)
-            channel_name = chat.title
-        except Exception:
-            channel_name = channel_id
-
-        await add_channel(channel_id, channel_name)
+@router.message(AddChannelStates.waiting_channel)
+async def add_channel_save(message: Message, state: FSMContext):
+    if not is_admin(message.from_user.id):
+        return
         
-        from master_bot.keyboards import admin_panel_kb
-        await message.answer(
-            f"✅ <b>{channel_name}</b> majburiy obunaga qo'shildi!",
-            reply_markup=admin_panel_kb(),
-            parse_mode="HTML"
-        )
-        await state.clear()
+    from database.channels import add_channel
+    channel_id = message.text.strip()
+    try:
+        chat = await message.bot.get_chat(channel_id)
+        channel_name = chat.title
+    except Exception:
+        channel_name = channel_id
 
-    @router.callback_query(F.data.startswith("delch:"))
-    async def delete_sub_channel(callback: CallbackQuery):
-        from database.channels import delete_channel, get_channels
-        from master_bot.keyboards import channels_manage_kb
+    await add_channel(channel_id, channel_name)
+    
+    from master_bot.keyboards import admin_panel_kb
+    await message.answer(
+        f"✅ <b>{channel_name}</b> majburiy obunaga qo'shildi!",
+        reply_markup=admin_panel_kb(),
+        parse_mode="HTML"
+    )
+    await state.clear()
+
+@router.callback_query(F.data.startswith("delch:"))
+async def delete_sub_channel(callback: CallbackQuery):
+    from database.channels import delete_channel, get_channels
+    from master_bot.keyboards import channels_manage_kb
+    
+    ch_id = int(callback.data.split(":")[1])
+    await delete_channel(ch_id)
+    
+    channels = await get_channels()
+    text = "✅ Kanal o'chirildi.\n\n"
+    if channels:
+        for ch in channels:
+            text += f"✅ {ch['channel_name'] or ch['channel_id']}\n"
+    else:
+        text += "⚠️ Majburiy obuna kanallar yo'q."
         
-        ch_id = int(callback.data.split(":")[1])
-        await delete_channel(ch_id)
-        
-        channels = await get_channels()
-        text = "✅ Kanal o'chirildi.\n\n"
-        if channels:
-            for ch in channels:
-                text += f"✅ {ch['channel_name'] or ch['channel_id']}\n"
-        else:
-            text += "⚠️ Majburiy obuna kanallar yo'q."
-            
-        await callback.message.edit_text(
-            text, reply_markup=channels_manage_kb(channels), parse_mode="HTML"
-        )
+    await callback.message.edit_text(
+        text, reply_markup=channels_manage_kb(channels), parse_mode="HTML"
+    )
