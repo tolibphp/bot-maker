@@ -57,17 +57,6 @@ def create_user_router(kino_db: KinoDB, admin_id: int) -> Router:
             await send_subscription_message(message, kino_db)
             return
 
-        # Admin gets admin panel
-        if message.from_user.id == admin_id:
-            from templates.kino_bot.keyboards import admin_main_kb
-            await message.answer(
-                "👑 <b>Admin Panel</b>\n\n"
-                "Salom, Admin! Botni boshqarish uchun tugmalardan foydalaning.",
-                reply_markup=admin_main_kb(),
-                parse_mode="HTML"
-            )
-            return
-
         # Check deep link (movie code from share/channel)
         text = message.text or ""
         if " " in text:
@@ -82,6 +71,17 @@ def create_user_router(kino_db: KinoDB, admin_id: int) -> Router:
                 )
                 await _send_movie(message, movie, bot_me.username)
                 return
+
+        # Admin gets admin panel
+        if message.from_user.id == admin_id:
+            from templates.kino_bot.keyboards import admin_main_kb
+            await message.answer(
+                "👑 <b>Admin Panel</b>\n\n"
+                "Salom, Admin! Botni boshqarish uchun tugmalardan foydalaning.",
+                reply_markup=admin_main_kb(),
+                parse_mode="HTML"
+            )
+            return
 
         # Professional user greeting
         name = message.from_user.full_name or message.from_user.username or "Foydalanuvchi"
