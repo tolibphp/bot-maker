@@ -504,7 +504,7 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
         await state.set_state(CreatePostStates.waiting_code)
 
     @router.message(CreatePostStates.waiting_code)
-    async def create_post_send(message: Message, state: FSMContext):
+    async def create_post_code(message: Message, state: FSMContext):
         if not is_admin(message):
             return
         
@@ -514,12 +514,36 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
             await message.answer("❌ Bunday kodli kino topilmadi. Qaytadan urinib ko'ring:")
             return
             
+        await state.update_data(movie_code=code)
+        await message.answer(
+            f"✅ Kodi <b>{code}</b> bo'lgan kino topildi: <b>{movie['name']}</b>\n\n"
+            f"Kanalga chiqarish uchun Media (rasm yoki qisqa video) yuboring. \n"
+            f"Media tagiga (caption) kino haqida ma'lumotlarni ham yozib yuboring (ixtiyoriy).",
+            reply_markup=cancel_admin_kb(),
+            parse_mode="HTML"
+        )
+        await state.set_state(CreatePostStates.waiting_media)
+
+    @router.message(CreatePostStates.waiting_media, F.photo | F.video | F.document)
+    async def create_post_send(message: Message, state: FSMContext):
+        if not is_admin(message):
+            return
+            
+        data = await state.get_data()
+        movie_code = data.get("movie_code")
+        movie = await kino_db.get_movie_by_code(movie_code)
+        
         bot_channels = await kino_db.get_bot_channels()
         ig_link = await kino_db.get_setting("instagram_link") or "Kiritilmagan"
         bot_me = await message.bot.get_me()
         bot_username = bot_me.username
         
+        user_caption = message.caption or ""
+        if user_caption:
+            user_caption += "\n\n"
+            
         post_caption = (
+            f"{user_caption}"
             f"👆 Ushbu kinoni to'liq holatda kino botimizga joyladik\n\n"
             f"🔎 Kino kodi:  {movie['code']} \n\n"
             f"🤖 Botimiz: @{bot_username}  👈\n\n"
@@ -532,24 +556,44 @@ def create_admin_router(kino_db: KinoDB, admin_id: int) -> Router:
             [InlineKeyboardButton(text="📥 Kinoni ko'rish", url=f"https://t.me/{bot_username}?start={movie['code']}")]
         ])
         
+        # Get file ID
+        file_id = None
+        file_type = None
+        if message.photo:
+            file_id = message.photo[-1].file_id
+            file_type = "photo"
+        elif message.video:
+            file_id = message.video.file_id
+            file_type = "video"
+        elif message.document:
+            file_id = message.document.file_id
+            file_type = "document"
+            
         sent = 0
         failed = 0
         
         for ch in bot_channels:
             try:
-                # Try to send as video first, if it fails maybe it's a document
-                try:
-                    await message.bot.send_video(
+                if file_type == "photo":
+                    await message.bot.send_photo(
                         chat_id=ch["channel_id"],
-                        video=movie["file_id"],
+                        photo=file_id,
                         caption=post_caption,
                         reply_markup=post_kb,
                         parse_mode="HTML"
                     )
-                except Exception:
+                elif file_type == "video":
+                    await message.bot.send_video(
+                        chat_id=ch["channel_id"],
+                        video=file_id,
+                        caption=post_caption,
+                        reply_markup=post_kb,
+                        parse_mode="HTML"
+                    )
+                else:
                     await message.bot.send_document(
                         chat_id=ch["channel_id"],
-                        document=movie["file_id"],
+                        document=file_id,
                         caption=post_caption,
                         reply_markup=post_kb,
                         parse_mode="HTML"

@@ -32,6 +32,7 @@ class SearchStates(StatesGroup):
 
 class CreatePostStates(StatesGroup):
     waiting_code = State()
+    waiting_media = State()
 
 
 class SettingsStates(StatesGroup):
