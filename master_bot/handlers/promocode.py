@@ -1,4 +1,4 @@
-﻿from aiogram import Router, F
+from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
@@ -6,17 +6,15 @@ from database import users
 from database.promocodes import use_promocode
 from master_bot.states import UsePromocodeStates
 from master_bot.keyboards import main_menu_kb, cancel_kb
+from master_bot.emojis import PROMO_GIFT, CHECK, MONEY
 
 router = Router()
 
 @router.message(F.text == "Promo-kod")
 async def use_promo_start(message: Message, state: FSMContext):
-    if await users.is_banned(message.from_user.id):
-        return
-        
     await message.answer(
-        "🎁 <b>Promo-kodni kiriting:</b>\n\n"
-        "Agar sizda chegirma kodi bo'lsa, uni shu yerga yozib yuboring.",
+        f"{PROMO_GIFT} <b>Promo-kodni kiriting:</b>\n\n"
+        f"Agar sizda chegirma kodi bo'lsa, uni shu yerga yozib yuboring.",
         reply_markup=cancel_kb(),
         parse_mode="HTML"
     )
@@ -31,8 +29,8 @@ async def use_promo_apply(message: Message, state: FSMContext):
     
     if success:
         await message.answer(
-            f"{msg}\n\n"
-            f"💸 Balansingizga <b>{reward} so'm</b> qo'shildi!",
+            f"{CHECK} {msg}\n\n"
+            f"{MONEY} Balansingizga <b>{reward} so'm</b> qo'shildi!",
             reply_markup=main_menu_kb(user_id),
             parse_mode="HTML"
         )
@@ -41,10 +39,10 @@ async def use_promo_apply(message: Message, state: FSMContext):
         try:
             await message.bot.send_message(
                 ADMIN_ID,
-                f"🎁 <b>Promo-kod ishlatildi!</b>\n\n"
+                f"{PROMO_GIFT} <b>Promo-kod ishlatildi!</b>\n\n"
                 f"👤 User: <a href='tg://user?id={user_id}'>{message.from_user.full_name}</a>\n"
-                f"🎟 Kod: <code>{code}</code>\n"
-                f"💸 Berildi: {reward} so'm",
+                f"🔑 Kod: <code>{code}</code>\n"
+                f"💰 Berildi: {reward} so'm",
                 parse_mode="HTML"
             )
         except Exception:

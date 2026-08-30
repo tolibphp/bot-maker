@@ -7,11 +7,11 @@ from database.bots import get_all_bots
 from database.payments import add_payment
 from master_bot.keyboards import admin_panel_kb, promocodes_manage_kb, back_kb
 from master_bot.states import AdminAddBalanceStates, PromocodeStates, AdminBroadcastStates, AddChannelStates
-from master_bot.emojis import CROWN, CHART, PEOPLE, HORN, WRENCH, MONEY, CROSS, CHECK, DOWN
+from master_bot.emojis import CROWN, CHART, PEOPLE, HORN, WRENCH, MONEY, CROSS, CHECK, DOWN, PROMO_GIFT
 
 router = Router()
 
-@router.message(F.text.in_({"👑 Admin Panel", "Admin Panel"}))
+@router.message(F.text == "Admin Panel")
 async def admin_panel(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -239,7 +239,7 @@ async def reject_payment(callback: CallbackQuery):
 # ==========================================
 #  ✅ MAJBURIY OBUNA (Kanal qo'shish/o'chirish)
 # ==========================================
-@router.message(F.text == "✅ Majburiy obuna")
+@router.message(F.text == "Majburiy obuna")
 async def manage_sub_channels(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -331,7 +331,7 @@ from database.promocodes import create_promocode, get_all_promocodes, delete_pro
 # ==========================================
 #  PROMOCODES (Admin)
 # ==========================================
-@router.message(F.text.in_({"🎁 Promo-kodlar", "Promo-kodlar"}))
+@router.message(F.text == "Promo-kodlar")
 async def manage_promocodes(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
