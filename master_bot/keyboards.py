@@ -39,7 +39,7 @@ def templates_kb():
         [InlineKeyboardButton(text=" Kino Bot — 30,000 so'm", callback_data="template:kino", icon_custom_emoji_id=MOVIE_ID)],
         [InlineKeyboardButton(text=" Stars Referral Bot — 15,000 so'm", callback_data="template:stars", icon_custom_emoji_id=STAR_ID)],
         [InlineKeyboardButton(text=" Premium Pul Ishlash — 15,000 so'm", callback_data="template:money", icon_custom_emoji_id=CASH_ID)],
-        [InlineKeyboardButton(text=" Video Yuklovchi — 15,000 so'm", callback_data="template:downloader", icon_custom_emoji_id=SCROLL_ID)],
+        [InlineKeyboardButton(text=" Video Yuklovchi — 15,000 so'm", callback_data="template:downloader", icon_custom_emoji_id=INBOX_ID)],
         [InlineKeyboardButton(text=" Bekor qilish", callback_data="cancel", icon_custom_emoji_id=CROSS_ID)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
