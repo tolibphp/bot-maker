@@ -32,3 +32,11 @@ class AdminBroadcastStates(StatesGroup):
 class AdminPriceStates(StatesGroup):
     waiting_price_type = State()
     waiting_new_price = State()
+
+class PromocodeStates(StatesGroup):
+    waiting_code = State()
+    waiting_reward = State()
+    waiting_limit = State()
+
+class UsePromocodeStates(StatesGroup):
+    waiting_code = State()

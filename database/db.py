@@ -56,6 +56,26 @@ async def init_master_db():
                 channel_id TEXT UNIQUE NOT NULL,
                 channel_name TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS promocodes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT UNIQUE NOT NULL,
+                reward_amount INTEGER NOT NULL,
+                usage_limit INTEGER NOT NULL,
+                used_count INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS promocode_usages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_telegram_id INTEGER NOT NULL,
+                promocode_id INTEGER NOT NULL,
+                used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_telegram_id) REFERENCES users(telegram_id),
+                FOREIGN KEY (promocode_id) REFERENCES promocodes(id),
+                UNIQUE(user_telegram_id, promocode_id)
+            );
         """)
         await db.commit()
 

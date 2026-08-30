@@ -6,7 +6,7 @@ from config import ADMIN_ID
 from master_bot.emojis import (
     BOT_ID, LIST_ID, MONEY_ID, LINK_ID, CARD_ID, PHONE_ID, CROWN_ID,
     CHART_ID, PEOPLE_ID, HORN_ID, WRENCH_ID, BACK_ID, MOVIE_ID, STAR_ID, CASH_ID,
-    CHECK_ID, CROSS_ID, PAUSE_ID, PLAY_ID, TRASH_ID, UPRIGHT_ID, SCROLL_ID
+    CHECK_ID, CROSS_ID, PAUSE_ID, PLAY_ID, TRASH_ID, UPRIGHT_ID, SCROLL_ID, INBOX_ID, PROMO_GIFT_ID, PROMO_CASH_ID
 )
 
 def main_menu_kb(user_id: int = None):
@@ -163,4 +163,17 @@ def channels_manage_kb(channels: list):
             )
         ])
     buttons.append([InlineKeyboardButton(text="➕ Kanal qo'shish", callback_data="add_channel")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def promocodes_manage_kb(promos: list):
+    buttons = []
+    for p in promos:
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"🗑 {p['code']} ({p['reward_amount']}) - {p['used_count']}/{p['usage_limit']}",
+                callback_data=f"delpromo:{p['id']}"
+            )
+        ])
+    buttons.append([InlineKeyboardButton(text="➕ Yangi yaratish", callback_data="add_promocode")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)

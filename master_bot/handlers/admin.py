@@ -5,8 +5,8 @@ from config import ADMIN_ID
 from database.users import get_users_count, get_all_users
 from database.bots import get_all_bots
 from database.payments import add_payment
-from master_bot.keyboards import admin_panel_kb, back_kb
-from master_bot.states import AdminAddBalanceStates, AdminBroadcastStates, AddChannelStates
+from master_bot.keyboards import admin_panel_kb, promocodes_manage_kb, back_kb
+from master_bot.states import AdminAddBalanceStates, PromocodeStates, AdminBroadcastStates, AddChannelStates
 from master_bot.emojis import CROWN, CHART, PEOPLE, HORN, WRENCH, MONEY, CROSS, CHECK, DOWN
 
 router = Router()
@@ -326,3 +326,110 @@ async def delete_sub_channel(callback: CallbackQuery):
     await callback.message.edit_text(
         text, reply_markup=channels_manage_kb(channels), parse_mode="HTML"
     )
+from database.promocodes import create_promocode, get_all_promocodes, delete_promocode
+
+# ==========================================
+#  PROMOCODES (Admin)
+# ==========================================
+@router.message(F.text.in_({"🎁 Promo-kodlar", "Promo-kodlar"}))
+async def manage_promocodes(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    
+    promos = await get_all_promocodes()
+    text = "🎁 <b>Promo-kodlar</b>\n\n"
+    if not promos:
+        text += "Hali hech qanday promo-kod yaratilmagan."
+    else:
+        text += "Quyida yaratilgan kodlar ro'yxati:"
+        
+    await message.answer(
+        text,
+        reply_markup=promocodes_manage_kb(promos),
+        parse_mode="HTML"
+    )
+
+@router.callback_query(F.data == "add_promocode")
+async def add_promo_start(callback: CallbackQuery, state: FSMContext):
+    if callback.from_user.id != ADMIN_ID:
+        return
+    await callback.message.edit_text(
+        "🎁 <b>Yangi Promo-kod</b>\n\n"
+        "Kod nomini kiriting (faqat harf va raqamlar, probelsiz):\n"
+        "Masalan: <code>YANGIYIL</code>",
+        parse_mode="HTML"
+    )
+    await state.set_state(PromocodeStates.waiting_code)
+
+@router.message(PromocodeStates.waiting_code)
+async def add_promo_code(message: Message, state: FSMContext):
+    if message.from_user.id != ADMIN_ID:
+        return
+    code = message.text.strip().upper()
+    if " " in code:
+        await message.answer("❌ Kodda probel bo'lishi mumkin emas. Qaytadan kiriting:")
+        return
+    await state.update_data(promo_code=code)
+    
+    await message.answer("💸 Bu kod foydalanuvchiga qancha balans beradi? (Masalan: 5000):")
+    await state.set_state(PromocodeStates.waiting_reward)
+
+@router.message(PromocodeStates.waiting_reward)
+async def add_promo_reward(message: Message, state: FSMContext):
+    if message.from_user.id != ADMIN_ID:
+        return
+    try:
+        reward = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Faqat raqam kiriting:")
+        return
+        
+    await state.update_data(promo_reward=reward)
+    await message.answer("👥 Ushbu koddan jami nechta odam foydalana oladi? (Limitni kiriting):")
+    await state.set_state(PromocodeStates.waiting_limit)
+
+@router.message(PromocodeStates.waiting_limit)
+async def add_promo_limit(message: Message, state: FSMContext):
+    if message.from_user.id != ADMIN_ID:
+        return
+    try:
+        limit = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Faqat raqam kiriting:")
+        return
+        
+    data = await state.get_data()
+    code = data.get("promo_code")
+    reward = data.get("promo_reward")
+    
+    success = await create_promocode(code, reward, limit)
+    if success:
+        await message.answer(
+            f"✅ <b>Promo-kod yaratildi!</b>\n\n"
+            f"🎁 Kod: <code>{code}</code>\n"
+            f"💸 Beriladigan pul: {reward} so'm\n"
+            f"👥 Limit: {limit} ta odam",
+            reply_markup=admin_panel_kb(),
+            parse_mode="HTML"
+        )
+    else:
+        await message.answer(
+            "❌ Xatolik yuz berdi. Balki bunday kod allaqachon bordir?",
+            reply_markup=admin_panel_kb()
+        )
+    await state.clear()
+
+@router.callback_query(F.data.startswith("delpromo:"))
+async def del_promo(callback: CallbackQuery):
+    if callback.from_user.id != ADMIN_ID:
+        return
+    promo_id = int(callback.data.split(":")[1])
+    await delete_promocode(promo_id)
+    
+    promos = await get_all_promocodes()
+    await callback.message.edit_text(
+        "✅ Promo-kod o'chirildi.\n\n🎁 Qolgan kodlar ro'yxati:",
+        reply_markup=promocodes_manage_kb(promos),
+        parse_mode="HTML"
+    )
+
