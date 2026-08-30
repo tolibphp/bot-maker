@@ -15,7 +15,7 @@ def get_master_router() -> Router:
     master_router.include_router(my_bots_router)
     master_router.include_router(balance_router)
     master_router.include_router(referral_router)
-    router.include_router(promocode_router)
+    master_router.include_router(promocode_router)
     master_router.include_router(admin_router)
     master_router.include_router(subscription_router)
     return master_router
