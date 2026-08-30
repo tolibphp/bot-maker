@@ -6,7 +6,7 @@ from config import ADMIN_ID
 from master_bot.emojis import (
     BOT_ID, LIST_ID, MONEY_ID, LINK_ID, CARD_ID, PHONE_ID, CROWN_ID,
     CHART_ID, PEOPLE_ID, HORN_ID, WRENCH_ID, BACK_ID, MOVIE_ID, STAR_ID, CASH_ID,
-    CHECK_ID, CROSS_ID, PAUSE_ID, PLAY_ID, TRASH_ID, UPRIGHT_ID, SCROLL_ID, INBOX_ID, PROMO_GIFT_ID, PROMO_CASH_ID
+    CHECK_ID, CROSS_ID, PAUSE_ID, PLAY_ID, TRASH_ID, UPRIGHT_ID, SCROLL_ID, INBOX_ID, PROMO_GIFT_ID, PROMO_CASH_ID, MUSIC_ID
 )
 
 def main_menu_kb(user_id: int = None):
@@ -36,10 +36,11 @@ def admin_panel_kb():
 
 def templates_kb():
     buttons = [
-        [InlineKeyboardButton(text=" Kino Bot — 30,000 so'm", callback_data="template:kino", icon_custom_emoji_id=MOVIE_ID)],
-        [InlineKeyboardButton(text=" Stars Referral Bot — 15,000 so'm", callback_data="template:stars", icon_custom_emoji_id=STAR_ID)],
-        [InlineKeyboardButton(text=" Premium Pul Ishlash — 15,000 so'm", callback_data="template:money", icon_custom_emoji_id=CASH_ID)],
-        [InlineKeyboardButton(text=" Video Yuklovchi — 15,000 so'm", callback_data="template:downloader", icon_custom_emoji_id=INBOX_ID)],
+        [InlineKeyboardButton(text=" Kino Bot — 25,000 so'm", callback_data="template:kino", icon_custom_emoji_id=MOVIE_ID)],
+        [InlineKeyboardButton(text=" Stars Referral Bot — 10,000 so'm", callback_data="template:stars", icon_custom_emoji_id=STAR_ID)],
+        [InlineKeyboardButton(text=" Premium Pul Ishlash — 10,000 so'm", callback_data="template:money", icon_custom_emoji_id=CASH_ID)],
+        [InlineKeyboardButton(text=" Video Yuklovchi — 10,000 so'm", callback_data="template:downloader", icon_custom_emoji_id=INBOX_ID)],
+        [InlineKeyboardButton(text=" VK Music Bot — 10,000 so'm", callback_data="template:music", icon_custom_emoji_id=MUSIC_ID)],
         [InlineKeyboardButton(text=" Bekor qilish", callback_data="cancel", icon_custom_emoji_id=CROSS_ID)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

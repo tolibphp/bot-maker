@@ -48,6 +48,7 @@ class BotManager:
                 )
             elif bot_data["template_type"] == "downloader":
                 from templates.downloader_bot import DownloaderBot
+from templates.music_bot import MusicBot
                 bot_instance = DownloaderBot(
                     bot_token=bot_data["bot_token"],
                     admin_id=bot_data["owner_telegram_id"],
