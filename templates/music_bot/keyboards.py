@@ -1,6 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-MUSIC_EMOJI = '<tg-emoji emoji-id="5933952676151695799">🎧🎵</tg-emoji>'
+MUSIC_EMOJI = '<tg-emoji emoji-id="5933952676151695799">🎧</tg-emoji>'
 DOWN_EMOJI = '<tg-emoji emoji-id="5463107823946717464">⬇️</tg-emoji>'
 
 def admin_main_kb():
