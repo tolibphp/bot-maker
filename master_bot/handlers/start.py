@@ -4,6 +4,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from config import ADMIN_ID, ADMIN_USERNAME, TEMPLATES
+from master_bot.emojis import BOT, MOVIE, STAR, CASH, GIFT, BACK, PHONE, CHECK, PERSON, MONEY, INBOX, DOWN
 from database.users import add_user_with_referral, add_user, get_user, update_balance
 from database.payments import add_payment
 from master_bot.keyboards import main_menu_kb
@@ -71,10 +72,20 @@ async def cmd_start(message: Message):
             full_name=message.from_user.full_name
         )
 
-    # Build dynamic template list
     template_list = ""
+    emoji_map = {
+        "kino": MOVIE,
+        "stars": STAR,
+        "money": CASH,
+        "downloader": INBOX
+    }
+    
     for tmpl_id, tmpl in TEMPLATES.items():
-        template_list += f"🔹 <b>{tmpl['name']}</b> — {tmpl['price']:,} so'm\n"
+        emoji = emoji_map.get(tmpl_id, CHECK)
+        # tmpl['name'] includes a standard emoji like "🎬 Kino Bot". 
+        # We can strip the first two characters (the emoji and space) to keep it clean.
+        clean_name = tmpl['name'].split(" ", 1)[1] if " " in tmpl['name'] else tmpl['name']
+        template_list += f"{emoji} <b>{clean_name}</b> — {tmpl['price']:,} so'm\n"
 
     await message.answer(
         f"{BOT} <b>Bot Maker Xizmatiga Xush Kelibsiz!</b>\n\n"
@@ -83,7 +94,7 @@ async def cmd_start(message: Message):
         f"{template_list}\n"
         f"{GIFT} <i>Siz yaratgan har qanday bot dastlabki 30 kun mutlaqo BEPUL ishlaydi!</i>\n"
         f"Keyin oylik yoki kunlik tarif bo'yicha hisoblanadi.</blockquote>\n\n"
-        f"👇 <b>Marhamat, quyidagi tugmalar orqali xizmatlardan foydalaning:</b>",
+        f"{DOWN} <b>Marhamat, quyidagi tugmalar orqali xizmatlardan foydalaning:</b>",
         reply_markup=main_menu_kb(message.from_user.id),
         parse_mode="HTML"
     )

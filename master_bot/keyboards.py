@@ -16,7 +16,8 @@ def main_menu_kb(user_id: int = None):
          KeyboardButton(text="Balansim", icon_custom_emoji_id=MONEY_ID)],
         [KeyboardButton(text="Referral", icon_custom_emoji_id=LINK_ID), 
          KeyboardButton(text="Balans to'ldirish", icon_custom_emoji_id=CARD_ID)],
-        [KeyboardButton(text="Aloqa", icon_custom_emoji_id=PHONE_ID)],
+        [KeyboardButton(text="Aloqa", icon_custom_emoji_id=PHONE_ID),
+         KeyboardButton(text="Promo-kod", icon_custom_emoji_id=PROMO_GIFT_ID)],
     ]
     if user_id == ADMIN_ID:
         buttons.append([KeyboardButton(text="Admin Panel", icon_custom_emoji_id=CROWN_ID)])
@@ -25,21 +26,22 @@ def main_menu_kb(user_id: int = None):
 def admin_panel_kb():
     buttons = [
         [KeyboardButton(text="Statistika", icon_custom_emoji_id=CHART_ID),
-         KeyboardButton(text="✅ Majburiy obuna")],
+         KeyboardButton(text="Majburiy obuna", icon_custom_emoji_id=CHECK_ID)],
         [KeyboardButton(text="Foydalanuvchilar", icon_custom_emoji_id=PEOPLE_ID), 
          KeyboardButton(text="Balans qo'shish", icon_custom_emoji_id=MONEY_ID)],
         [KeyboardButton(text="Broadcast", icon_custom_emoji_id=HORN_ID), 
          KeyboardButton(text="Barcha botlar", icon_custom_emoji_id=WRENCH_ID)],
+        [KeyboardButton(text="Promo-kodlar", icon_custom_emoji_id=PROMO_GIFT_ID)],
         [KeyboardButton(text="Orqaga", icon_custom_emoji_id=BACK_ID)],
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 def templates_kb():
     buttons = [
-        [InlineKeyboardButton(text=" Kino Bot — 25,000 so'm", callback_data="template:kino", icon_custom_emoji_id=MOVIE_ID)],
-        [InlineKeyboardButton(text=" Stars Referral Bot — 10,000 so'm", callback_data="template:stars", icon_custom_emoji_id=STAR_ID)],
-        [InlineKeyboardButton(text=" Premium Pul Ishlash — 10,000 so'm", callback_data="template:money", icon_custom_emoji_id=CASH_ID)],
-        [InlineKeyboardButton(text=" Video Yuklovchi — 10,000 so'm", callback_data="template:downloader", icon_custom_emoji_id=INBOX_ID)],
+        [InlineKeyboardButton(text=" Kino Bot - 25,000 so'm", callback_data="template:kino", icon_custom_emoji_id=MOVIE_ID)],
+        [InlineKeyboardButton(text=" Stars Referral Bot - 10,000 so'm", callback_data="template:stars", icon_custom_emoji_id=STAR_ID)],
+        [InlineKeyboardButton(text=" Premium Pul Ishlash - 10,000 so'm", callback_data="template:money", icon_custom_emoji_id=CASH_ID)],
+        [InlineKeyboardButton(text=" Video Yuklovchi - 10,000 so'm", callback_data="template:downloader", icon_custom_emoji_id=INBOX_ID)],
         [InlineKeyboardButton(text=" Bekor qilish", callback_data="cancel", icon_custom_emoji_id=CROSS_ID)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -108,7 +110,6 @@ def back_kb():
 
 
 def balance_kb():
-    """Inline keyboard under the balance message."""
     buttons = [
         [InlineKeyboardButton(text=" To'lovlar tarixi", callback_data="payment_history:0", icon_custom_emoji_id=SCROLL_ID)]
     ]
@@ -116,14 +117,13 @@ def balance_kb():
 
 
 def payment_history_kb(page: int, total_pages: int):
-    """Inline keyboard for navigating transaction history."""
     buttons = []
     nav = []
     if page > 0:
-        nav.append(InlineKeyboardButton(text="⬅️", callback_data=f"payment_history:{page-1}"))
+        nav.append(InlineKeyboardButton(text="<", callback_data=f"payment_history:{page-1}"))
     nav.append(InlineKeyboardButton(text=f"{page+1}/{total_pages}", callback_data="noop"))
     if page < total_pages - 1:
-        nav.append(InlineKeyboardButton(text="➡️", callback_data=f"payment_history:{page+1}"))
+        nav.append(InlineKeyboardButton(text=">", callback_data=f"payment_history:{page+1}"))
     if nav:
         buttons.append(nav)
     
@@ -146,10 +146,10 @@ def subscription_kb(channels: list):
         else:
             url = f"https://t.me/{channel_id}"
         buttons.append([
-            InlineKeyboardButton(text=f"📢 {name}", url=url)
+            InlineKeyboardButton(text=f" {name}", url=url)
         ])
     buttons.append([
-        InlineKeyboardButton(text="✅ Tekshirish", callback_data="check_sub")
+        InlineKeyboardButton(text=" Tekshirish", callback_data="check_sub", icon_custom_emoji_id=CHECK_ID)
     ])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -158,11 +158,11 @@ def channels_manage_kb(channels: list):
     for ch in channels:
         buttons.append([
             InlineKeyboardButton(
-                text=f"🗑 {ch['channel_name'] or ch['channel_id']}",
-                callback_data=f"delch:{ch['id']}"
+                text=f" {ch['channel_name'] or ch['channel_id']}",
+                callback_data=f"delch:{ch['id']}", icon_custom_emoji_id=TRASH_ID
             )
         ])
-    buttons.append([InlineKeyboardButton(text="➕ Kanal qo'shish", callback_data="add_channel")])
+    buttons.append([InlineKeyboardButton(text=" Kanal qo'shish", callback_data="add_channel")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -171,9 +171,9 @@ def promocodes_manage_kb(promos: list):
     for p in promos:
         buttons.append([
             InlineKeyboardButton(
-                text=f"🗑 {p['code']} ({p['reward_amount']}) - {p['used_count']}/{p['usage_limit']}",
-                callback_data=f"delpromo:{p['id']}"
+                text=f" {p['code']} ({p['reward_amount']}) - {p['used_count']}/{p['usage_limit']}",
+                callback_data=f"delpromo:{p['id']}", icon_custom_emoji_id=TRASH_ID
             )
         ])
-    buttons.append([InlineKeyboardButton(text="➕ Yangi yaratish", callback_data="add_promocode")])
+    buttons.append([InlineKeyboardButton(text=" Yangi yaratish", callback_data="add_promocode")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
