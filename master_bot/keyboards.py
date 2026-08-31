@@ -12,15 +12,15 @@ from master_bot.emojis import (
 def main_menu_kb(user_id: int = None):
     buttons = [
         [KeyboardButton(text="Bot yaratish", icon_custom_emoji_id=BOT_ID, style="success")],
-        [KeyboardButton(text="Mening botlarim", icon_custom_emoji_id=LIST_ID), 
-         KeyboardButton(text="Balansim", icon_custom_emoji_id=MONEY_ID)],
-        [KeyboardButton(text="Referral", icon_custom_emoji_id=LINK_ID), 
+        [KeyboardButton(text="Mening botlarim", icon_custom_emoji_id=LIST_ID, style="success"), 
+         KeyboardButton(text="Balansim", icon_custom_emoji_id=MONEY_ID, style="success")],
+        [KeyboardButton(text="Referral", icon_custom_emoji_id=LINK_ID, style="primary"), 
          KeyboardButton(text="Balans to'ldirish", icon_custom_emoji_id=CARD_ID, style="primary")],
-        [KeyboardButton(text="Aloqa", icon_custom_emoji_id=PHONE_ID),
-         KeyboardButton(text="Promo-kod", icon_custom_emoji_id=PROMO_GIFT_ID)],
+        [KeyboardButton(text="Aloqa", icon_custom_emoji_id=PHONE_ID, style="success"),
+         KeyboardButton(text="Promo-kod", icon_custom_emoji_id=PROMO_GIFT_ID, style="success")],
     ]
     if user_id == ADMIN_ID:
-        buttons.append([KeyboardButton(text="Admin Panel", icon_custom_emoji_id=CROWN_ID)])
+        buttons.append([KeyboardButton(text="Admin Panel", icon_custom_emoji_id=CROWN_ID, style="success")])
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 def admin_panel_kb():
